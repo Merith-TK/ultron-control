@@ -1,0 +1,6 @@
+
+## Define Host for the API
+host = "localhost"
+## Define Port for the API
+port = 3300
+

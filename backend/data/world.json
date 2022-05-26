@@ -1,0 +1,22 @@
+{
+	"blocks":[	
+		{
+			"block" : "minecraft:stone",
+			"pos":{
+				"x": 100,
+				"y": 100,
+				"z": 100
+			},
+			"data":""
+		},
+		{
+			"block" : "minecraft:stone",
+			"pos":{
+				"x": 101,
+				"y": 101,
+				"z": 101
+			},
+			"data":""
+		}
+	]
+}
