@@ -47,21 +47,31 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	idInt,_ := strconv.Atoi(id)
 	action := vars["action"]
-	currentTurtle := turtleData[0]
 	arrayPos := 0
-	for p, t := range turtleData {
+	found := false
+	// create empty CurrentTurtle
+	var currentTurtle Turtle
+	
+	for p, t := range turtles {
 		if t.ID == idInt {
 			currentTurtle = t
 			arrayPos = p
+			found = true
 			break
 		}
 	}
-
+	if !found {
+		// create new turtle with empty data
+		currentTurtle.ID = idInt
+		turtles = append(turtles, currentTurtle)
+		arrayPos = len(turtles) - 1
+	}
+	
 	if r.Method == "GET" {
 		// return turtle data on /api/turtle/{id}
 		if id == "" {
 			//return all turtle data
-			json.NewEncoder(w).Encode(turtleData)
+			json.NewEncoder(w).Encode(turtles)
 		} else if id != "" {
 			// make switch for action
 			switch action {
@@ -81,23 +91,27 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 			// return error
 			w.Write([]byte("Error: ID not found"))
 		} else if id != "" {
-			// check if currentTurtle.ID == id
-			if currentTurtle.ID == idInt {
-				// send POST data to currentTurtle
-				json.NewDecoder(r.Body).Decode(&currentTurtle)
-				// save POST data to turtleData
-				turtleData[arrayPos] = currentTurtle
+			
+			// send POST data to currentTurtle
+			if err := json.NewDecoder(r.Body).Decode(&currentTurtle) ; err != nil {
+				w.Write([]byte("Error: " + err.Error()))
+			} else if currentTurtle.ID == idInt {
+				// save POST data to turtles
+				turtles[arrayPos] = currentTurtle 
+			} else {
+				// check if id is already in use
+				for _, t := range turtles {
+					if t.ID == idInt {
+						w.Write([]byte("Error: ID already in use"))
+						break
+					}
+				}
 			}
-			//save data
-				saveData()
-		} else {
-			// return error
-			w.Write([]byte("Error: ID Missmatch"))
-			//TODO: handle for non-existant turtle
+			saveData()
 		}
+
 	}
 }
-
 
 //handle world api
 func handleWorldApi(w http.ResponseWriter, r *http.Request) {

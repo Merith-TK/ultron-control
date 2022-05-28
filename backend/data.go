@@ -6,8 +6,8 @@ import (
 	"log"
 )
 
-
-type TurtleData []struct {
+var turtles []Turtle
+type Turtle struct {
 	Name string `json:"name"`
 	ID  int `json:"id"`
 	Pos struct {
@@ -40,7 +40,7 @@ type WorldData struct {
 }
 var (
 	// assign turtle data to variable
-	turtleData TurtleData
+	//turtleData Turtles
 	// assign world data to variable
 	worldData WorldData
 )
@@ -52,10 +52,10 @@ func loadData() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	json.Unmarshal(turtleFile, &turtleData)
+	json.Unmarshal(turtleFile, &turtles)
 
 	// show turtle data
-	log.Println("[TurtleData]:", turtleData)
+	log.Println("[TurtleData]:", turtles)
 
 	// load world data
 	worldFile, err := ioutil.ReadFile("data/world.json")
@@ -72,7 +72,7 @@ func loadData() {
 // save data to files
 func saveData() {
 	// save turtle data
-	turtleFile, err := json.Marshal(turtleData)
+	turtleFile, err := json.Marshal(turtles)
 	if err != nil {
 		log.Fatal(err)
 	}
