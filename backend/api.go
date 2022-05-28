@@ -36,22 +36,18 @@ func createApiServer() {
 	r.HandleFunc("/api/v1/world/", handleWorldApi)
 
 
+	//convert config.Port from int to string
+	port := strconv.Itoa(config.Port)
+	
 	// start webserver on port 3300
-	http.ListenAndServe(":3300", r)
+	http.ListenAndServe(":"+port, r)
 }
 
 //handle global api
 func handleGlobalApi(w http.ResponseWriter, r *http.Request) {
 	// return list of available api
 	w.Write([]byte("Available API: \n" +
-		"/api/v1/turtle \n" +
-		"/api/v1/turtle/{id} \n" +
-		"/api/v1/turtle/{id}/{action} \n" +
-		"/api/v1/turtle/{id}/{action}/{function} \n" +
-		"/api/v1/world \n" +
-		"/api/v1/world/{id} \n" +
-		"/api/v1/world/{id}/{action} \n" +
-		"/api/v1/world/{id}/{action}/{function} \n"))
+		"Not Filled in by design for now"))
 }
 
 //handle turtle api
@@ -62,6 +58,7 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 		id := vars["id"]
 		idInt,_ := strconv.Atoi(id)
 		action := vars["action"]
+		function := vars["function"]
 		currentTurtle := turtleData[0]
 		for _, t := range turtleData {
 			if t.ID == idInt {
@@ -74,7 +71,35 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 		if id == "" {
 			//return all turtle data
 			json.NewEncoder(w).Encode(turtleData)
-		} else if id != "" && action != "" {
+		} else if id != "" {
+			// make switch for action
+			switch action {
+			case "":
+				//return turtle data
+				json.NewEncoder(w).Encode(currentTurtle)
+			case "pos":
+				//return turtle position with switch
+				switch function {
+				case "":
+					json.NewEncoder(w).Encode(currentTurtle.Pos)
+				case "x":
+					json.NewEncoder(w).Encode(currentTurtle.Pos.X)
+				case "y":
+					json.NewEncoder(w).Encode(currentTurtle.Pos.Y)
+				case "z":
+					json.NewEncoder(w).Encode(currentTurtle.Pos.Z)
+				case "r":
+					json.NewEncoder(w).Encode(currentTurtle.Pos.X)
+				// if function is not x, y, z or r return error
+				default:
+					w.Write([]byte("Error: Function not found " + function))
+				}
+			default:
+				w.Write([]byte("Error: Action not found"))
+			}
+		
+		
+		/*&& action != "" {
 			// if action is pos, return turtle position and rotation
 			if action == "pos" {
 				json.NewEncoder(w).Encode(currentTurtle.Pos)
@@ -82,7 +107,7 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 		} else if id != "" && action == "" {
 			// if no action is given, return turtle data
 			json.NewEncoder(w).Encode(currentTurtle)
-		}
+		}*/
 
 
 	}
@@ -109,6 +134,7 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 		// do stuff
 	}
 	*/
+	}
 }
 
 //handle world api
