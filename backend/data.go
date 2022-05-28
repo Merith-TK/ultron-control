@@ -68,3 +68,20 @@ func loadData() {
 	// show world data
 	log.Println("[WorldData]: ", worldData)
 }
+
+// save data to files
+func saveData() {
+	// save turtle data
+	turtleFile, err := json.Marshal(turtleData)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ioutil.WriteFile("./data/turtle.json", turtleFile, 0644)
+
+	// save world data
+	worldFile, err := json.Marshal(worldData)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ioutil.WriteFile("./data/world.json", worldFile, 0644)
+}
