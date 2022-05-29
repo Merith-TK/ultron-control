@@ -8,24 +8,18 @@ import (
 
 var turtles []Turtle
 type Turtle struct {
-	Name string `json:"name"`
-	ID  int `json:"id"`
-	Pos struct {
-		X int    `json:"x"`
-		Y int    `json:"y"`
-		Z int    `json:"z"`
-		R string `json:"r"`
+	Name         string        `json:"name"`
+	ID           int           `json:"id"`
+	Inventory    []interface{} `json:"inventory"`
+	SelectedSlot int           `json:"selectedSlot"`
+	Pos          struct {
+		Y int `json:"y"`
+		X int `json:"x"`
+		R int `json:"r"`
+		Z int `json:"z"`
 	} `json:"pos"`
-	Inventory struct {
-		SelectedSlot int `json:"selectedSlot"`
-		Items        []struct {
-			ID    string `json:"id"`
-			Name  string `json:"name"`
-			Count int    `json:"count"`
-			Slot  int    `json:"slot"`
-		} `json:"items"`
-	} `json:"inventory,omitempty"`
 }
+
 
 type WorldData struct {
 	Blocks []struct {
@@ -55,7 +49,7 @@ func loadData() {
 	json.Unmarshal(turtleFile, &turtles)
 
 	// show turtle data
-	log.Println("[TurtleData]:", turtles)
+	//log.Println("[TurtleData]:", turtles)
 
 	// load world data
 	worldFile, err := ioutil.ReadFile("data/world.json")
@@ -66,7 +60,7 @@ func loadData() {
 	json.Unmarshal(worldFile, &worldData)
 
 	// show world data
-	log.Println("[WorldData]: ", worldData)
+	//log.Println("[WorldData]: ", worldData)
 }
 
 // save data to files

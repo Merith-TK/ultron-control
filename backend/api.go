@@ -76,8 +76,17 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 			// make switch for action
 			switch action {
 			case "":
-				//return turtle data
+				// return turtle data
 				json.NewEncoder(w).Encode(currentTurtle)
+			case "name":
+				// return turtle name
+				w.Write([]byte(currentTurtle.Name))
+			case "inventory":
+				// return turtle inventory
+				json.NewEncoder(w).Encode(currentTurtle.Inventory)
+			case "selectedSlot":
+				// return turtle selected slot
+				json.NewEncoder(w).Encode(currentTurtle.SelectedSlot)
 			case "pos":
 				//return turtle position
 				json.NewEncoder(w).Encode(currentTurtle.Pos)
