@@ -1,3 +1,13 @@
+# Ultron Control
+This is intended to be an api server for remotely controlling turtles, 
+in its current state it is just an backend able to recieve data from an turtle, store it, and then present the data
+
+### ToDo
+	- [ ] make backend able to send data to turtle
+		- [ ] create turtle control api (reliant on previous)
+	- [ ] make frontend
+	
+
 
 # API Documentation
 ## Backend

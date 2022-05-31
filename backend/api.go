@@ -12,11 +12,8 @@ import (
 func createApiServer() {
 	// create webserver on port 3300
 	r := mux.NewRouter()
-	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		//serve files from ./public
-		http.ServeFile(w, r, "./public/index.html")
-	})
-
+	// Serve Turtle Files
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(config.TurtleLua))))
 
 	//create api for /api/turtle with argument for id
 	r.HandleFunc("/api/v1/turtle", handleTurtleApi)
@@ -25,12 +22,10 @@ func createApiServer() {
 
 	// todo: create api for /api/world
 	//create api for /api/world
-	r.HandleFunc("/api/v1/world", handleWorldApi)
 	r.HandleFunc("/api/v1/world/", handleWorldApi)
 	
 	// todo: make global api more than placeholder
 	//handle global api on /api/v1
-	r.HandleFunc("/api/v1", handleGlobalApi)
 	r.HandleFunc("/api/v1/", handleGlobalApi)
 
 
@@ -124,11 +119,18 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 
 //handle world api
 func handleWorldApi(w http.ResponseWriter, r *http.Request) {
-	world := worldData
-	var resp []byte
-	resp,_ = json.Marshal(world)
-	w.Write(resp)
-
+	if r.Method == "GET" {
+		// return world data
+		json.NewEncoder(w).Encode(worldDataBlocks)
+	} else if r.Method == "POST" {
+		var data WorldDataBlock
+		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+			w.Write([]byte("Error: " + err.Error()))
+		} else {
+			worldDataBlocks = append(worldDataBlocks, data)
+			saveData()
+		}
+	}
 }
 
 //handle global api

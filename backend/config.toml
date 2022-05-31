@@ -1,6 +1,10 @@
-
-## Define Host for the API
+## Define Host for the API server
 host = "localhost"
-## Define Port for the API
+## Define Port for the API server
 port = 3300
 
+## Location for Turtle lua files
+turtle_lua = "../static"
+
+## Ultron Data Directory
+ultron_data = "../ultron_data"
