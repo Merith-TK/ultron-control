@@ -2,23 +2,29 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 
+	"github.com/gorilla/websocket"
+
 	"github.com/gorilla/mux"
-)
+) 
+
 
 
 func createApiServer() {
-	// create webserver on port 3300
+	// // create webserver on port 3300
+	//go func() {
 	r := mux.NewRouter()
+
 	// Serve Turtle Files
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(config.TurtleLua))))
 
 	//create api for /api/turtle with argument for id
 	r.HandleFunc("/api/v1/turtle", handleTurtleApi)
 	r.HandleFunc("/api/v1/turtle/{id}", handleTurtleApi)
-	r.HandleFunc("/api/v1/turtle/{id}/{action}", handleTurtleApi).Methods("GET")
+	//r.HandleFunc("/api/v1/turtle/{id}/{action}", handleTurtleApi).Methods("GET")
 
 	// todo: create api for /api/world
 	//create api for /api/world
@@ -28,29 +34,80 @@ func createApiServer() {
 	//handle global api on /api/v1
 	r.HandleFunc("/api/v1/", handleGlobalApi)
 
+	r.HandleFunc("/turtlews", handleWs)
 
-	//convert config.Port from int to string
+	// start webserver on config.Port
 	port := strconv.Itoa(config.Port)
-	
-	// start webserver on port 3300
 	http.ListenAndServe(":"+port, r)
 }
 
-//handle turtle api
+var upgrader = websocket.Upgrader{}
+// handle websocket
+func handleWs(w http.ResponseWriter, r *http.Request) {
+	// message should come in as json
+	
+	c, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Print("upgrade:", err)
+		return
+	}
+	defer c.Close()
+	for {
+		mt, message, err := c.ReadMessage()
+		if err != nil {
+			log.Println("read:", err)
+			break
+		}
+
+		// create empty CurrentTurtle
+		var currentTurtle Turtle
+		
+		//decode json message onto currentTurtle
+		json.Unmarshal(message, &currentTurtle)
+
+		// check if turtle is already in list
+		found := false
+		for p, t := range turtles {
+			if t.ID == currentTurtle.ID {
+				found = true
+				turtles[p] = currentTurtle
+				break
+			}
+		}
+		if !found {
+			turtles = append(turtles, currentTurtle)
+		}
+	
+		// log message
+		log.Printf("recv: %s", message)
+		// print message header
+		log.Printf("recv: %s", mt)
+		
+		saveData()
+		
+		// send currentCommand to turtle
+		//var resposeMessage = "return skyrtle.turnLeft()"
+		//c.WriteMessage(mt, []byte(resposeMessage))
+	}
+}
+
+
+
+
+
+//handle GET turtle api
 func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	idInt,_ := strconv.Atoi(id)
 	action := vars["action"]
-	arrayPos := 0
 	found := false
 	// create empty CurrentTurtle
 	var currentTurtle Turtle
 	
-	for p, t := range turtles {
+	for _, t := range turtles {
 		if t.ID == idInt {
 			currentTurtle = t
-			arrayPos = p
 			found = true
 			break
 		}
@@ -59,7 +116,7 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 		// create new turtle with empty data
 		currentTurtle.ID = idInt
 		turtles = append(turtles, currentTurtle)
-		arrayPos = len(turtles) - 1
+	//		arrayPos = len(turtles) - 1
 	}
 	
 	if r.Method == "GET" {
@@ -90,31 +147,10 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else if r.Method == "POST" {
-		// check if id is empty
-		if id == "" {
-			// return error
-			w.Write([]byte("Error: ID not found"))
-		} else if id != "" {
-			
-			// send POST data to currentTurtle
-			if err := json.NewDecoder(r.Body).Decode(&currentTurtle) ; err != nil {
-				w.Write([]byte("Error: " + err.Error()))
-			} else if currentTurtle.ID == idInt {
-				// save POST data to turtles
-				turtles[arrayPos] = currentTurtle 
-			} else {
-				// check if id is already in use
-				for _, t := range turtles {
-					if t.ID == idInt {
-						w.Write([]byte("Error: ID already in use"))
-						break
-					}
-				}
-			}
-			saveData()
-		}
-
+		// return error that POST is not allowed
+		w.Write([]byte("Error: POST is not allowed"))
 	}
+
 }
 
 //handle world api

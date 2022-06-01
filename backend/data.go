@@ -19,6 +19,10 @@ type Turtle struct {
 		R int `json:"r"`
 		Z int `json:"z"`
 	} `json:"pos"`
+	Fuel int `json:"fuel"`
+	MaxFuel int `json:"maxFuel"`
+	CmdResult string `json:"cmdResult"`
+	CmdQueue []string `json:"cmdQueue"`
 }
 
 var worldDataBlocks []WorldDataBlock
@@ -41,11 +45,11 @@ func loadData() {
 	}
 
 	// load turtle data
-	turtleFile, err := ioutil.ReadFile(config.UltronData + "/turtle.json")
-	if err != nil {
-		log.Println("[TurtleData]: File does not exist")
-	}
-	json.Unmarshal(turtleFile, &turtles)
+	// turtleFile, err := ioutil.ReadFile(config.UltronData + "/turtle.json")
+	// if err != nil {
+	// 	log.Println("[TurtleData]: File does not exist")
+	// }
+	// json.Unmarshal(turtleFile, &turtles)
 
 	// load world data
 	worldFile, err := ioutil.ReadFile(config.UltronData + "/world.json")
@@ -60,11 +64,11 @@ func loadData() {
 // save data to files
 func saveData() {
 	// save turtle data
-	turtleFile, err := json.Marshal(turtles)
-	if err != nil {
-		log.Fatal(err)
-	}
-	ioutil.WriteFile(config.UltronData + "/turtle.json", turtleFile, 0644)
+	// turtleFile, err := json.Marshal(turtles)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// ioutil.WriteFile(config.UltronData + "/turtle.json", turtleFile, 0644)
 
 	// save world data
 	worldFile, err := json.Marshal(worldDataBlocks)

@@ -1,33 +1,3 @@
-----
--- this file contains the basic api for the
--- Ultron Turtle Control API
-----
-
--- TODO: add a way to get the current rotation
--- TODO:  get world api operational
--- TODO: fix turtle inspect front
-
---assert(turtle, "This must be ran on an TURTLE")
-assert(os.getComputerID() ~= 0, "This cannot be ran on ID 0")
-
-local skyrtle = require("skyrtle")
-skyrtle.hijack(true)
-local turtlePost = {
-	name = "",
-	id = 0,
-	pos = {
-		x = 0,
-		y = 0,
-		z = 0,
-		r = 0
-	},
-	fuel = 0,
-	maxFuel = 0,
-	selectedSlot = 0,
-	inventory = {
-	},
-}
-
 local worldPost = {
 	block = "",
 	pos = {
@@ -40,29 +10,10 @@ local worldPost = {
 
 
 local function postWorld(data)
-local WorldData =  textutils.serializeJSON(data)
-local file = fs.open("/WorldData.json", "w")
-file.write(WorldData)
-file.close()
-end
-local function postTurtle()
-	local TurtleData =  textutils.serializeJSON(turtlePost)
-	http.post("http://localhost:3300/api/v1/turtle/"..tostring(turtlePost.id), TurtleData)
-end
-local function getInventory()
-	for i = 1, 16 do
-		turtle.select(i)
-		local item = turtle.getItemDetail(i, true)
-		if not item then
-			item = {
-				name = "",
-				count = 0,
-				slot = i,
-			}
-		end
-		turtlePost.inventory[i] = item
-	end
-	turtle.select(turtlePost.selectedSlot)
+	local WorldData =  textutils.serializeJSON(data)
+	local file = fs.open("/WorldData.json", "w")
+	file.write(WorldData)
+	file.close()
 end
 
 -- function to inspect the block above, below, and infront
@@ -149,34 +100,3 @@ local function inspectWorld()
 		postWorld(post)
 	end
 end
-
-
-local function postData()
-	turtlePost.id = os.getComputerID()
-	local label = os.getComputerLabel()
-	if label and not label == "" then
-		turtlePost.name = label
-	else
-		os.setComputerLabel(tostring(turtlePost.id))
-		turtlePost.name = tostring(turtlePost.id)
-	end
-
-
-	local x,y,z = skyrtle.getPosition()
-	local r = skyrtle.getFacing()
-	turtlePost.pos.x = x
-	turtlePost.pos.y = y
-	turtlePost.pos.z = z
-	turtlePost.pos.r = r
-
-	turtlePost.fuel = turtle.getFuelLevel()
-	turtlePost.maxFuel = turtle.getFuelLimit()
-
-	turtlePost.selectedSlot = turtle.getSelectedSlot()
-	getInventory()
-
-	postTurtle()
-	inspectWorld()
-end
-
-postData()
