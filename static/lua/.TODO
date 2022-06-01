@@ -1,0 +1,7 @@
+[ ] make turtle api injector to enforce skyrtle.hijack()
+
+[ ] make commands process better in websocket.lua
+
+[ ] potentially fetch `skyrtle.lua` from source repo rather than bundle code in this repo
+
+[ ] investigate optimizations
