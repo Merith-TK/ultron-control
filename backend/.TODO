@@ -1,0 +1,13 @@
+[ ] improve turtle backend by exposing command API through open http post method and websocket
+	data is raw lua as string,
+
+[ ] make worldData accept arbitrary positioning for blocks, HTTP POST ONLY, websocket can be used for reading
+	```lua
+	-- example of what lua data should look like before serializeJson
+	local worldPost = {
+		[ pos.x .. "," .. pos.y .. "," .. pos.z ] {
+			block = data.name,
+			data = {},
+		}
+	}
+	```
