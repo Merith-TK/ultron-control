@@ -34,7 +34,8 @@ func createApiServer() {
 	//handle global api on /api/v1
 	r.HandleFunc("/api/v1/", handleGlobalApi)
 
-	r.HandleFunc("/turtlews", handleWs)
+	r.HandleFunc("/turtlews", turtleWs)
+	r.HandleFunc("/pocketws", pocketWs)
 
 	// start webserver on config.Port
 	port := strconv.Itoa(config.Port)
@@ -42,8 +43,48 @@ func createApiServer() {
 }
 
 var upgrader = websocket.Upgrader{}
-// handle websocket
-func handleWs(w http.ResponseWriter, r *http.Request) {
+
+// handle pocket websocket
+func pocketWs(w http.ResponseWriter, r *http.Request) {
+	// upgrade to websocket
+	ws, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	// wait for request
+	for {
+		// read message
+		_, msg, err := ws.ReadMessage()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		// if msg is not empty
+		if len(msg) > 0 {
+			// check if message requesting turtle data
+			if string(msg) == "turtle" {
+				// convert turtles to json
+				jsonTurtles, _ := json.Marshal(turtles)
+				// send turtle data
+				err = ws.WriteMessage(websocket.TextMessage, []byte(jsonTurtles))	
+				if err != nil {
+					log.Println(err)
+					break
+				} else {
+					log.Println("[Pocket] Sent turtle data")
+					log.Println("[Pocket]", turtles)
+				}
+			}
+		}
+	}
+}
+
+
+// handle turtle websocket
+func turtleWs(w http.ResponseWriter, r *http.Request) {
 	// message should come in as json
 	
 	c, err := upgrader.Upgrade(w, r, nil)
@@ -66,56 +107,49 @@ func handleWs(w http.ResponseWriter, r *http.Request) {
 		//decode json message onto currentTurtle
 		json.Unmarshal(message, &currentTurtle)
 
-		// check if turtle is already in list
+		// find currentTurtle in turtles
 		found := false
 		pos := 0
 		for p, t := range turtles {
 			if t.ID == currentTurtle.ID {
+				currentTurtle.CmdQueue = t.CmdQueue
 				found = true
-				turtles[p] = currentTurtle
 				pos = p
 				break
 			}
 		}
 		if !found {
+			// add currentTurtle to turtles
 			turtles = append(turtles, currentTurtle)
+		} else {
+			// update currentTurtle in turtles
+			turtles[pos] = currentTurtle
 		}
-	
-		// print recieved message from current turtle
-		//log.Println("recieved:", currentTurtle.Name)
-		
-		
-		
-		// convert turtles[pos].cmdQueue to json
-		jsonCmdQueue, err := json.Marshal(turtles[pos].CmdQueue)
-		if err != nil {
-			log.Println("marshal:", err)
-			break
+		if currentTurtle.CmdResult != "" {
+			// log result
+			log.Println("[Turtle]", currentTurtle.Name, ":", currentTurtle.CmdResult)
+			// clear result
+			currentTurtle.CmdResult = ""
+			turtles[pos] = currentTurtle
 		}
-
-
-		// send cmdQueue to client
-		//log.Println("sending:", turtles[pos].CmdQueue)
-		err = c.WriteMessage(mt, []byte(jsonCmdQueue))
-		if err != nil {
-			log.Println("write:", err)
-			break
+		// if cmdQueue is not empty, send cmdQueue to client
+		if len(turtles[pos].CmdQueue) > 0 {
+			// convert cmdQueue to json
+			jsonCmdQueue, _ := json.Marshal(turtles[pos].CmdQueue)
+			// send jsonCmdQueue to client and wait for response
+			err := c.WriteMessage(mt, jsonCmdQueue)
+			if err != nil {
+				log.Println("write:", err)
+				break
+			}
+			
+			// clear cmdQueue
+			turtles[pos].CmdQueue = []string{}
+			currentTurtle.CmdQueue = []string{}
 		}
-
-		log.Println("[WebSocket]", turtles[pos].Name, ":", turtles[pos].CmdQueue)
-
-
-
-
-		// clear cmdQueue
-		//turtles[pos].CmdQueue = nil
-		// save data
 		saveData()
 	}
 }
-
-
-
 
 
 //handle GET turtle api
@@ -124,11 +158,11 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	idInt,_ := strconv.Atoi(id)
 	action := vars["action"]
+	
+	// check if id is in turtles
+	var currentTurtle Turtle
 	found := false
 	pos := 0
-	// create empty CurrentTurtle
-	var currentTurtle Turtle
-	
 	for p, t := range turtles {
 		if t.ID == idInt {
 			currentTurtle = t
@@ -138,9 +172,11 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if !found {
-		currentTurtle.ID = idInt
-		turtles = append(turtles, currentTurtle)
+		// if not found, return error
+		w.Write([]byte("Error: Turtle with id " + id + " not found"))
+		return
 	}
+
 	
 	if r.Method == "GET" {
 		// return turtle data on /api/turtle/{id}
@@ -173,21 +209,15 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else if r.Method == "POST" {
-		// print r.Body
+		// r.Body should be a json string
+		// decode json string into currentTurtle.CmdQueue
 		if err := json.NewDecoder(r.Body).Decode(&currentTurtle.CmdQueue); err != nil {
-			log.Println(err)
-		} else {
-			// print currentTurtle.CmdQueue
-			//log.Println("Added To Que ", currentTurtle.CmdQueue)
-			// append currentTurtle.CmdQueue to turtles[pos].CmdQueue
-			turtles[pos].CmdQueue = append(turtles[pos].CmdQueue, currentTurtle.CmdQueue...)
-			// print turtles[pos].CmdQueue
-			//log.Println("Current Que ", turtles[arraypos].CmdQueue)
-			
-
-			// state currentTurtle.id
-			log.Println("[Post]", turtles[pos].Name, ":", turtles[pos].CmdQueue)
+			log.Println("[Error] Decoding json:", err)
+			return
 		}
+
+		// add currentTurtle.CmdQueue to turtles[pos].CmdQueue
+		turtles[pos].CmdQueue = append(turtles[pos].CmdQueue, currentTurtle.CmdQueue...)
 	}
 }
 

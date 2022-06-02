@@ -1,5 +1,10 @@
-[ ] improve turtle backend by exposing command API through open http post method and websocket
+[X] improve turtle backend by exposing command API through open http post method and websocket
 	data is raw lua as string,
+		`curl -X POST -H "Content-Type: application/json"  --data-binary '["return skyrtle.turnLeft()"]' http://localhost:3300/api/v1/turtle/1`
+
+[ ] Initialize skyrtle pos on turtles
+	* could use GPS if present
+	* require user intervention
 
 [ ] make worldData accept arbitrary positioning for blocks, HTTP POST ONLY, websocket can be used for reading
 	```lua

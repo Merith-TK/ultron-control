@@ -20,12 +20,30 @@ type Turtle struct {
 		R int `json:"r"`
 		Rname string `json:"rname"`
 	} `json:"pos"`
-	Fuel int `json:"fuel"`
-	MaxFuel int `json:"maxFuel"`
+	Fuel struct {
+		Current int `json:"current"`
+		Max     int `json:"max"`
+	} `json:"fuel"`
+	
 	CmdResult string `json:"cmdResult"`
 	CmdQueue []string `json:"cmdQueue"`
 	MiscData []interface{} `json:"miscData"`
 }
+
+var pockets []Pocket
+type Pocket struct {
+	Name string `json:"name"`
+	ID int `json:"id"`
+	Pos struct {
+		Y int `json:"y"`
+		X int `json:"x"`
+		Z int `json:"z"`
+		R int `json:"r"`
+		Rname string `json:"rname"`
+	} `json:"pos"`
+	MiscData []interface{} `json:"miscData"`
+}
+
 
 var worldDataBlocks []WorldDataBlock
 type WorldDataBlock struct {

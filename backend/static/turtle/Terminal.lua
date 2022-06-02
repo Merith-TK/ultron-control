@@ -8,17 +8,17 @@ local turtleData = {
 		r = 0,
 		rname = "",
 	},
-	fuel = 0,
-	maxFuel = 0,
+	fuel = {
+		current = 0,
+		max = 0,
+	},
 	selectedSlot = 0,
 	inventory = {
 	},
 	cmdResult = nil,
+	cmdQueue = {},
 	miscData = {},
 }
-
-
-local cmdQueue = {}
 
 -- function to recieve commands from websocket
 
@@ -28,9 +28,7 @@ skyrtle.hijack()
 local init = require("../init")
 local config = init.config
 
-
-
-local wsHeader = { "data", tostring(os.getComputerID()), } -- header for websocket
+init.debugPrint()
 
 
 init.debugPrint("ApiDelay: " .. config.apiDelay)
@@ -38,13 +36,12 @@ init.debugPrint("Websocket URL: " .. config.ws.turtle)
 init.debugPrint("Websocket Header: " .. textutils.serialize(wsHeader))
 
 
-local ws, wsErr = http.websocket(config.ws.turtle, wsHeader )
-while not ws and not debug do
-	print("Error: Unable to connect to websocket, trying again")
-	sleep(1)
-	ws, wsErr = http.websocket(config.ws.turtle, wsHeader )
-end
-
+-- local ws, wsErr = http.websocket(config.ws.turtle, wsHeader )
+-- while not ws and not debug do
+-- 	print("Error: Unable to connect to websocket, trying again")
+-- 	sleep(1)
+-- 	ws, wsErr = http.websocket(config.ws.turtle, wsHeader )
+-- end
 
 -- function to send turtle data to websocket
 local function updateControl()
@@ -65,8 +62,8 @@ local function updateControl()
 	turtleData.pos.r = r
 	turtleData.pos.rname = rname
 
-	turtleData.fuel = turtle.getFuelLevel()
-	turtleData.maxFuel = turtle.getFuelLimit()
+	turtleData.fuel.current = turtle.getFuelLevel()
+	turtleData.fuel.max = turtle.getFuelLimit()
 
 	turtleData.selectedSlot = turtle.getSelectedSlot()
 
@@ -85,32 +82,62 @@ local function updateControl()
 	turtle.select(turtleData.selectedSlot)
 
 	local TurtleData =  textutils.serializeJSON(turtleData)
-	ws.send(TurtleData)
+	init.ws("send",TurtleData)
 end
 
 -- process cmdQueue as function
 local function processCmdQueue()
-	if #cmdQueue > 0 then
-		local cmd = table.remove(cmdQueue, 1)
+	init.debugPrint("Processing cmdQueue")
+	init.debugPrint("cmdQueue: " .. textutils.serialize(turtleData.cmdQueue))
+	-- check if cmdQueue is empty
+	if #turtleData.cmdQueue ~= 0 then
+		turtleData.cmdResult = nil
+		init.debugPrint("Executing cmdQueue")
+		local cmd = table.remove(turtleData.cmdQueue, 1)
 		if cmd then
+			-- remove [" and "] from beginning and end of cmd
+			cmd = cmd:sub(3, -3)
+
+			init.debugPrint("cmd: " .. cmd)
+
 			init.debugPrint("Processing command: " .. cmd)
-			local result = skyrtle.processCmd(cmd)
-			turtleData.cmdResult = result
-			init.debugPrint("Command result: " .. result)
+			local cmdExec, err = loadstring(cmd)
+			if cmdExec then
+				local success, result = pcall(cmdExec)
+				if success then
+					--init.debugPrint("[CMD] " .. cmd .. ": " .. result)
+					turtleData.cmdResult = result
+				else
+					--init.debugPrint("[CMD] " .. cmd .. ": " .. result)
+					turtleData.cmdResult = result
+				end
+			else
+				init.debugPrint("[CMD] " .. cmd .. ": " .. err)
+				turtleData.cmdResult = nil
+			end
 		end
 	end
 end
 
+
+
 local function recieveOrders()
 	while true do
-		local data, err = ws.receive()
+		init.debugPrint("Waiting for orders")
+		local event, url, data = os.pullEvent("websocket_message")
 		if data then
 			init.debugPrint("Order Recieved: " .. data)
-			if not data == "null" then
-				-- add data to cmdQueue
-				table.insert(cmdQueue, data)
-			end
+			table.insert(turtleData.cmdQueue, data)
+			init.debugPrint("cmdQueue: " .. textutils.serialize(turtleData.cmdQueue))
+		else
+			init.debugPrint("No data recieved")
 		end
+
+		-- save cmdQueue to file /cmdQueue.json
+		local file = fs.open("/cmdQueue.json", "w")
+		file.write(textutils.serializeJSON(turtleData.cmdQueue))
+		file.close()
+
 		processCmdQueue()
 	end
 end
@@ -120,13 +147,35 @@ local function waitForDelay()
 	sleep(config.apiDelay)
 end
 
-
-local function main()
+local function event_TurtleInventory()
+	os.pullEvent("turtle_inventory")
+end
+local function apiLoop()
 	while true do
-		parallel.waitForAny(waitForDelay, recieveOrders)
 		updateControl()
+		parallel.waitForAny(waitForDelay,  event_TurtleInventory)
 	end
 end
 
-main()
-ws.close()
+local function main()
+	parallel.waitForAll(apiLoop, recieveOrders, processCmdQueue)
+end
+
+-- load cmdQueue from file /cmdQueue.json
+local file = fs.open("/cmdQueue.json", "r")
+if file then
+	local cmdQueue = textutils.unserialize(file.readAll())
+	file.close()
+	if cmdQueue then
+		turtleData.cmdQueue = cmdQueue
+	end
+end
+
+while true do
+	local succ, err = pcall(main)
+	if not succ then
+		print("[Error] " .. err)
+		break
+	end
+end
+init.ws("close")

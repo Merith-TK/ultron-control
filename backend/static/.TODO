@@ -1,7 +1,7 @@
 [ ] make turtle api injector to enforce skyrtle.hijack()
 
-[ ] make commands process better in websocket.lua
+[ ] create control frontend for turtle
 
-[ ] potentially fetch `skyrtle.lua` from source repo rather than bundle code in this repo
+[ ] create control backend and frontend for computer
 
-[ ] investigate optimizations
+[ ] make turtle save cmdQueue to file for persistance should websocket loose connection
