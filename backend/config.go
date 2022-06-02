@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 
@@ -10,7 +11,7 @@ import (
 type Config struct {
 	Host string `toml:"host"`
 	Port int    `toml:"port"`
-	TurtleLua string `toml:"turtle_lua"`
+	LuaFiles string `toml:"luafiles"`
 	UltronData string `toml:"ultron_data"`
 }
 
@@ -23,12 +24,30 @@ host = "localhost"
 port = 3300
 
 ## Location for Turtle lua files
-turtle_lua = "../static"
+luafiles = "../static"
 
 ## Ultron Data Directory
 ultron_data = "../ultron_data"
 `
 )
+
+// setup config
+func setupConfig() {
+	// read config for default values
+	readConfig()
+
+	// create flag for config.Port
+	flag.IntVar(&config.Port, "port", 3300, "Port for the API server")
+	// create flag for config.Host
+	flag.StringVar(&config.Host, "host", "localhost", "Host for the API server")
+	// create flag for config.LuaFiles
+	flag.StringVar(&config.LuaFiles, "luafiles", "../static", "Location for Turtle lua files")
+	// create flag for config.UltronData
+	flag.StringVar(&config.UltronData, "ultron_data", "../ultron_data", "Ultron Data Directory")
+
+	// parse command line arguments
+	flag.Parse()
+}
 
 //read config from config.toml
 func readConfig() {

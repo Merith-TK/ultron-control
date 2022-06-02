@@ -16,13 +16,15 @@ type Turtle struct {
 	Pos          struct {
 		Y int `json:"y"`
 		X int `json:"x"`
-		R int `json:"r"`
 		Z int `json:"z"`
+		R int `json:"r"`
+		Rname string `json:"rname"`
 	} `json:"pos"`
 	Fuel int `json:"fuel"`
 	MaxFuel int `json:"maxFuel"`
 	CmdResult string `json:"cmdResult"`
 	CmdQueue []string `json:"cmdQueue"`
+	MiscData []interface{} `json:"miscData"`
 }
 
 var worldDataBlocks []WorldDataBlock
@@ -63,13 +65,6 @@ func loadData() {
 
 // save data to files
 func saveData() {
-	// save turtle data
-	// turtleFile, err := json.Marshal(turtles)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// ioutil.WriteFile(config.UltronData + "/turtle.json", turtleFile, 0644)
-
 	// save world data
 	worldFile, err := json.Marshal(worldDataBlocks)
 	if err != nil {

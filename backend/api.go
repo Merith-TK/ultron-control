@@ -19,12 +19,12 @@ func createApiServer() {
 	r := mux.NewRouter()
 
 	// Serve Turtle Files
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(config.TurtleLua))))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(config.LuaFiles))))
 
 	//create api for /api/turtle with argument for id
 	r.HandleFunc("/api/v1/turtle", handleTurtleApi)
 	r.HandleFunc("/api/v1/turtle/{id}", handleTurtleApi)
-	//r.HandleFunc("/api/v1/turtle/{id}/{action}", handleTurtleApi).Methods("GET")
+	r.HandleFunc("/api/v1/turtle/{id}/{action}", handleTurtleApi).Methods("GET")
 
 	// todo: create api for /api/world
 	//create api for /api/world
@@ -53,6 +53,7 @@ func handleWs(w http.ResponseWriter, r *http.Request) {
 	}
 	defer c.Close()
 	for {
+		// DOC: unused value is header from client
 		mt, message, err := c.ReadMessage()
 		if err != nil {
 			log.Println("read:", err)
@@ -67,10 +68,12 @@ func handleWs(w http.ResponseWriter, r *http.Request) {
 
 		// check if turtle is already in list
 		found := false
+		pos := 0
 		for p, t := range turtles {
 			if t.ID == currentTurtle.ID {
 				found = true
 				turtles[p] = currentTurtle
+				pos = p
 				break
 			}
 		}
@@ -78,16 +81,36 @@ func handleWs(w http.ResponseWriter, r *http.Request) {
 			turtles = append(turtles, currentTurtle)
 		}
 	
-		// log message
-		log.Printf("recv: %s", message)
-		// print message header
-		log.Printf("recv: %s", mt)
+		// print recieved message from current turtle
+		//log.Println("recieved:", currentTurtle.Name)
 		
+		
+		
+		// convert turtles[pos].cmdQueue to json
+		jsonCmdQueue, err := json.Marshal(turtles[pos].CmdQueue)
+		if err != nil {
+			log.Println("marshal:", err)
+			break
+		}
+
+
+		// send cmdQueue to client
+		//log.Println("sending:", turtles[pos].CmdQueue)
+		err = c.WriteMessage(mt, []byte(jsonCmdQueue))
+		if err != nil {
+			log.Println("write:", err)
+			break
+		}
+
+		log.Println("[WebSocket]", turtles[pos].Name, ":", turtles[pos].CmdQueue)
+
+
+
+
+		// clear cmdQueue
+		//turtles[pos].CmdQueue = nil
+		// save data
 		saveData()
-		
-		// send currentCommand to turtle
-		//var resposeMessage = "return skyrtle.turnLeft()"
-		//c.WriteMessage(mt, []byte(resposeMessage))
 	}
 }
 
@@ -102,21 +125,21 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 	idInt,_ := strconv.Atoi(id)
 	action := vars["action"]
 	found := false
+	pos := 0
 	// create empty CurrentTurtle
 	var currentTurtle Turtle
 	
-	for _, t := range turtles {
+	for p, t := range turtles {
 		if t.ID == idInt {
 			currentTurtle = t
 			found = true
+			pos = p
 			break
 		}
 	}
 	if !found {
-		// create new turtle with empty data
 		currentTurtle.ID = idInt
 		turtles = append(turtles, currentTurtle)
-	//		arrayPos = len(turtles) - 1
 	}
 	
 	if r.Method == "GET" {
@@ -142,15 +165,30 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 			case "pos":
 				//return turtle position
 				json.NewEncoder(w).Encode(currentTurtle.Pos)
+			case "cmdQueue":
+				// return turtle cmdQueue
+				json.NewEncoder(w).Encode(currentTurtle.CmdQueue)
 			default:
 				w.Write([]byte("Error: Action not found"))
 			}
 		}
 	} else if r.Method == "POST" {
-		// return error that POST is not allowed
-		w.Write([]byte("Error: POST is not allowed"))
-	}
+		// print r.Body
+		if err := json.NewDecoder(r.Body).Decode(&currentTurtle.CmdQueue); err != nil {
+			log.Println(err)
+		} else {
+			// print currentTurtle.CmdQueue
+			//log.Println("Added To Que ", currentTurtle.CmdQueue)
+			// append currentTurtle.CmdQueue to turtles[pos].CmdQueue
+			turtles[pos].CmdQueue = append(turtles[pos].CmdQueue, currentTurtle.CmdQueue...)
+			// print turtles[pos].CmdQueue
+			//log.Println("Current Que ", turtles[arraypos].CmdQueue)
+			
 
+			// state currentTurtle.id
+			log.Println("[Post]", turtles[pos].Name, ":", turtles[pos].CmdQueue)
+		}
+	}
 }
 
 //handle world api

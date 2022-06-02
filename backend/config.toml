@@ -4,7 +4,7 @@ host = "localhost"
 port = 3300
 
 ## Location for Turtle lua files
-turtle_lua = "../static"
+luafiles = "static"
 
 ## Ultron Data Directory
 ultron_data = "../ultron_data"
