@@ -18,6 +18,12 @@ func createApiServer() {
 	//go func() {
 	r := mux.NewRouter()
 
+	// handle / 
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// return all api routes
+		w.Write([]byte("Welcome to the Ultron API!"))
+	})
+
 	// Serve Turtle Files
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(config.LuaFiles))))
 
@@ -42,7 +48,10 @@ func createApiServer() {
 	http.ListenAndServe(":"+port, r)
 }
 
-var upgrader = websocket.Upgrader{}
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool { return true },
+}
+
 
 // handle pocket websocket
 func pocketWs(w http.ResponseWriter, r *http.Request) {
@@ -121,6 +130,7 @@ func turtleWs(w http.ResponseWriter, r *http.Request) {
 		if !found {
 			// add currentTurtle to turtles
 			turtles = append(turtles, currentTurtle)
+			log.Println("[Turtle] Added new turtle:", currentTurtle.ID, ":", currentTurtle.Name)
 		} else {
 			// update currentTurtle in turtles
 			turtles[pos] = currentTurtle
@@ -161,21 +171,21 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 	
 	// check if id is in turtles
 	var currentTurtle Turtle
-	found := false
+	//found := false
 	pos := 0
 	for p, t := range turtles {
 		if t.ID == idInt {
 			currentTurtle = t
-			found = true
+			//found = true
 			pos = p
 			break
 		}
 	}
-	if !found {
-		// if not found, return error
-		w.Write([]byte("Error: Turtle with id " + id + " not found"))
-		return
-	}
+	// if !found {
+	// 	// if not found, return error
+	// 	//w.Write([]byte("Error: Turtle with id " + id + " not found"))
+	// 	//return
+	// }
 
 	
 	if r.Method == "GET" {
@@ -191,7 +201,13 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 				json.NewEncoder(w).Encode(currentTurtle)
 			case "name":
 				// return turtle name
-				w.Write([]byte(currentTurtle.Name))
+				json.NewEncoder(w).Encode(currentTurtle.Name)
+			case "fuel":
+				// return turtle fuel
+				json.NewEncoder(w).Encode(currentTurtle.Fuel)
+			case "misc":
+				// return turtle misc
+				json.NewEncoder(w).Encode(currentTurtle.MiscData)
 			case "inventory":
 				// return turtle inventory
 				json.NewEncoder(w).Encode(currentTurtle.Inventory)
