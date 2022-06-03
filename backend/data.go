@@ -44,16 +44,25 @@ type Pocket struct {
 	MiscData []interface{} `json:"miscData"`
 }
 
+var computers []Computer
+type Computer struct {
+	Name string `json:"name"`
+	ID int `json:"id"`
+	CmdResult string `json:"cmdResult"`
+	CmdQueue []string `json:"cmdQueue"`
+	MiscData []interface{} `json:"miscData"`
+}
+
 
 var worldDataBlocks []WorldDataBlock
 type WorldDataBlock struct {
-		Block string `json:"block"`
-		Pos   struct {
-			X int `json:"x"`
-			Y int `json:"y"`
-			Z int `json:"z"`
-		} `json:"pos"`
-		Data []interface{} `json:"data"`
+	Block string `json:"block"`
+	Pos   struct {
+		X int `json:"x"`
+		Y int `json:"y"`
+		Z int `json:"z"`
+	} `json:"pos"`
+	Data []interface{} `json:"data"`
 }
 
 // create function to load data from files to memory
@@ -63,14 +72,7 @@ func loadData() {
 		log.Println("Ultron data directory does not exist, creating it")
 		os.Mkdir(config.UltronData, 0777)
 	}
-
-	// load turtle data
-	// turtleFile, err := ioutil.ReadFile(config.UltronData + "/turtle.json")
-	// if err != nil {
-	// 	log.Println("[TurtleData]: File does not exist")
-	// }
-	// json.Unmarshal(turtleFile, &turtles)
-
+	
 	// load world data
 	worldFile, err := ioutil.ReadFile(config.UltronData + "/world.json")
 	if err != nil {

@@ -2,11 +2,11 @@ local init = {}
 local cID = os.getComputerID()
 init.url = "http://localhost:3300/"
 init.config = {
-	debug = false,
+	debug = true,
 	ws = {
 		turtle = init.url .. "turtlews",
 		pocket = init.url .. "pocketws",
-		pocket = init.url .. "computerws",
+		computer = init.url .. "computerws",
 	},
 	wsHeader = {
 		current = nil,
@@ -25,10 +25,10 @@ init.config = {
 	},
 	api = {
 		current = nil,
-		computer = init.url .. "api/v1/computer/" .. cID.. "/",
-		turtle =   init.url .. "api/v1/turtle/" .. cID.. "/",
-		pocket =   init.url .. "api/v1/pocket/" .. cID.. "/",
-		world  =   init.url .. "api/v1/world/" .. cID.. "/",
+		computer = init.url .. "api/computer/" .. cID.. "/",
+		turtle =   init.url .. "api/turtle/" .. cID.. "/",
+		pocket =   init.url .. "api/pocket/" .. cID.. "/",
+		world  =   init.url .. "api/world/",
 	},
 	luaUrl = init.url .. "static/",
 	files = {
@@ -58,6 +58,9 @@ init.config = {
 	downloadDelay = 0.25,
 	apiDelay = 1,
 }
+
+init.cmdResult = false
+init.cmdQueue = {}
 
 -- replace all http with ws in init.config.ws
 for i, v in pairs(init.config.ws) do
@@ -101,7 +104,6 @@ local function websocketError(data)
 	end
 	init.debugPrint("Attempting to reconnect...")
 	sleep(init.config.apiDelay)
-	--pcall(websocket.close)
 	openWebsocket()
 end
 
@@ -123,6 +125,102 @@ function init.ws(connectionType, data)
 		if not err then websocketError(result) end
 		init.debugPrint("Websocket closed")
 	end
+end
+
+--------------------------------------------------------------------------------
+-- processQueue(queue)
+-- Processes the queue
+
+function init.processCmdQueue(cmdQueue)
+	while true do
+		-- check if cmdQueue is empty
+		if #init.cmdQueue ~= 0 then
+			while #init.cmdQueue ~= 0 do
+				cmdResult = nil
+				init.debugPrint("Executing init.cmdQueue")
+				local cmd = table.remove(init.cmdQueue, 1)
+				print("Executing cmd: " .. cmd)
+				local file = fs.open("/cmdQueue.json", "w")
+				file.write(textutils.serializeJSON(init.cmdQueue))
+				file.close()
+				if cmd then
+					init.debugPrint("cmd: " .. cmd)
+					init.debugPrint("Processing command: " .. cmd)
+					local cmdExec, err = loadstring(cmd)
+					if cmdExec then
+						print("Executing command: " .. cmd)
+						setfenv(cmdExec, getfenv())
+						local success, result = pcall(cmdExec)
+							cmdResult = result
+					else
+						cmdResult = nil
+					end
+				end
+				print("Commands left: " .. #init.cmdQueue)
+			end
+			init.cmdResult = cmdResult
+		else
+			sleep()
+		end
+	end
+end
+
+--------------------------------------------------------------------------------
+-- waitForOrders(queue)
+-- Waits for orders from the websocket
+function init.recieveOrders()
+	while true do
+		init.debugPrint("Waiting for orders")
+		local event, url, data = os.pullEvent("websocket_message")
+		if data then
+			init.debugPrint("Order Recieved: " .. data)
+			data = textutils.unserializeJSON(data)
+			-- append data table contents to init.cmdQueue
+			for i = 1, #data do
+				if data[i] == "ultron.break()" then
+					-- clear init.cmdQueue
+					init.cmdQueue = {}
+					os.reboot()
+				end
+				table.insert(init.cmdQueue, data[i])
+			end
+			init.debugPrint("cmdQueue: " .. textutils.serialize(init.cmdQueue))
+		else
+			init.debugPrint("No data recieved")
+		end
+	end
+end
+
+--------------------------------------------------------------------------------
+-- loadCommandQueue()
+-- Loads the command queue from file
+function init.loadCommandQueue()
+	local cmdQueue = {}
+	local file = fs.open("/cmdQueue.json", "r")
+	if file then
+		local data = file.readAll()
+		file.close()
+		if data then
+			init.debugPrint("cmdQueue: " .. data)
+			cmdQueue = textutils.unserializeJSON(data)
+			init.debugPrint("cmdQueue: " .. textutils.serialize(cmdQueue))
+			return cmdQueue
+		else
+			init.debugPrint("cmdQueue: " .. textutils.serialize(cmdQueue))
+			return cmdQueue
+		end
+	else
+		init.debugPrint("cmdQueue: " .. textutils.serialize(cmdQueue))
+		init.cmdQueue = cmdQueue
+	end
+end
+
+--------------------------------------------------------------------------------
+-- waitForDelay()
+-- Waits for the api delay
+function init.waitForDelay()
+	--init.debugPrint("Waiting for apiDelay")
+	sleep(init.config.apiDelay)
 end
 
 
