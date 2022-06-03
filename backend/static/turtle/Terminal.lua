@@ -28,6 +28,7 @@ skyrtle.hijack()
 local init = require("../init")
 local config = init.config
 
+init.ws("open")
 init.debugPrint()
 
 
@@ -79,36 +80,38 @@ end
 
 -- process cmdQueue as function
 local function processCmdQueue()
-	init.debugPrint("Processing cmdQueue")
-	init.debugPrint("cmdQueue: " .. textutils.serialize(turtleData.cmdQueue))
-	-- check if cmdQueue is empty
-	while #turtleData.cmdQueue ~= 0 do
-		turtleData.cmdResult = nil
-		init.debugPrint("Executing cmdQueue")
-		local cmd = table.remove(turtleData.cmdQueue, 1)
-		-- save cmdQueue to file /cmdQueue.json
-		local file = fs.open("/cmdQueue.json", "w")
-		file.write(textutils.serializeJSON(turtleData.cmdQueue))
-		file.close()
-		if cmd then
-			init.debugPrint("cmd: " .. cmd)
-			init.debugPrint("Processing command: " .. cmd)
-			local cmdExec, err = loadstring(cmd)
-			if cmdExec then
-				setfenv(cmdExec, getfenv())
-				local success, result = pcall(cmdExec)
-				if success then
-					--init.debugPrint("[CMD] " .. cmd .. ": " .. result)
-					turtleData.cmdResult = result
-				else
-					--init.debugPrint("[CMD] " .. cmd .. ": " .. result)
-					turtleData.cmdResult = result
-				end
-			else
-				init.debugPrint("[CMD] " .. cmd .. ": " .. err)
+	while true do
+		init.debugPrint("Processing cmdQueue")
+		init.debugPrint("cmdQueue: " .. textutils.serialize(turtleData.cmdQueue))
+		-- check if cmdQueue is empty
+		if #turtleData.cmdQueue ~= 0 then
+			while #turtleData.cmdQueue ~= 0 do
 				turtleData.cmdResult = nil
+				init.debugPrint("Executing cmdQueue")
+				local cmd = table.remove(turtleData.cmdQueue, 1)
+				print("Executing cmd: " .. cmd)
+				local file = fs.open("/cmdQueue.json", "w")
+				file.write(textutils.serializeJSON(turtleData.cmdQueue))
+				file.close()
+				if cmd then
+					init.debugPrint("cmd: " .. cmd)
+					init.debugPrint("Processing command: " .. cmd)
+					local cmdExec, err = loadstring(cmd)
+					if cmdExec then
+						print("Executing command: " .. cmd)
+						setfenv(cmdExec, getfenv())
+						local success, result = pcall(cmdExec)
+							turtleData.cmdResult = result
+							print("cmdResult: " .. textutils.serialize(turtleData.cmdResult))
+					else
+						init.debugPrint("[CMD] " .. cmd .. ": " .. err)
+						turtleData.cmdResult = nil
+					end
+				end
+				print("Commands left: " .. #turtleData.cmdQueue)
 			end
 		end
+		sleep(config.apiDelay)
 	end
 end
 
@@ -116,7 +119,7 @@ end
 
 local function recieveOrders()
 	while true do
-		processCmdQueue()
+		--processCmdQueue()
 		init.debugPrint("Waiting for orders")
 		local event, url, data = os.pullEvent("websocket_message")
 		if data then
@@ -124,6 +127,11 @@ local function recieveOrders()
 			data = textutils.unserializeJSON(data)
 			-- append data table contents to cmdQueue
 			for i = 1, #data do
+				if data[i] == "ultron.break()" then
+					-- clear cmdQueue
+					turtleData.cmdQueue = {}
+					os.reboot()
+				end
 				table.insert(turtleData.cmdQueue, data[i])
 			end
 			init.debugPrint("cmdQueue: " .. textutils.serialize(turtleData.cmdQueue))
@@ -149,7 +157,7 @@ local function apiLoop()
 end
 
 local function main()
-	parallel.waitForAll(apiLoop, recieveOrders)
+	parallel.waitForAll(apiLoop, recieveOrders, processCmdQueue)
 end
 
 -- load cmdQueue from file /cmdQueue.json

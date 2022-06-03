@@ -64,6 +64,71 @@ for i, v in pairs(init.config.ws) do
 	init.config.ws[i] = v:gsub("http", "ws")
 end
 
+
+
+--------------------------------------------------------------------------------
+-- debugPrint(string)
+-- Prints a string to the terminal if debug is enabled
+--------------------------------------------------------------------------------
+function init.debugPrint(str)
+	if init.config.debug then
+		if str then
+			print("[Debug] "..str)
+		end
+	end
+end
+
+init.debugPrint("Enabled")
+
+-- open websocket
+init.websocket = {}
+local function openWebsocket()
+	local ws = http.websocket(init.config.ws.current, init.config.wsHeader.current)
+	if ws then
+		init.websocket = ws
+		return true
+	else
+		return false
+	end
+end
+
+local function websocketError(data)
+	-- attempt to reconnect to websocket
+	if data then
+		init.debugPrint("Websocket error: " .. data)
+	else
+		init.debugPrint("Websocket error not sent")
+	end
+	init.debugPrint("Attempting to reconnect...")
+	sleep(init.config.apiDelay)
+	--pcall(websocket.close)
+	openWebsocket()
+end
+
+function init.ws(connectionType, data)
+	if connectionType == "open" then
+		openWebsocket()
+		init.debugPrint("Websocket opened")
+	elseif connectionType == "send" then
+		local err, result = pcall(init.websocket.send, data)
+		if not err then websocketError(result) end
+		--init.debugPrint("Websocket sent: " .. data)
+	elseif connectionType == "receive" then
+		local err, result = pcall(init.websocket.receive, 1)
+		if not err then websocketError(result) end
+		init.debugPrint("Websocket received: " .. result)
+		return result
+	elseif type == "close" then
+		local err, result = pcall(init.websocket.close)
+		if not err then websocketError(result) end
+		init.debugPrint("Websocket closed")
+	end
+end
+
+
+--------------------------------------------------------------------------------
+-- setup system
+--------------------------------------------------------------------------------
 -- download files
 local function downloadFiles(files)
 	for _, file in ipairs(files) do
@@ -135,69 +200,6 @@ if shell.getRunningProgram() == "rom/programs/http/wget.lua" then
 	end
 	print("[Update] Update complete")
 end
-
---------------------------------------------------------------------------------
--- debugPrint(string)
--- Prints a string to the terminal if debug is enabled
---------------------------------------------------------------------------------
-function init.debugPrint(str)
-	if init.config.debug then
-		if str then
-			print("[Debug] "..str)
-		end
-	end
-end
-
-init.debugPrint("Enabled")
-
--- open websocket
-init.websocket = {}
-local function openWebsocket()
-	local ws = http.websocket(init.config.ws.current, init.config.wsHeader.current)
-	if ws then
-		init.websocket = ws
-		print("Websocket opened")
-		return true
-	else
-		print("Websocket failed to open")
-		return false
-	end
-end
-
-local function websocketError(data)
-	-- attempt to reconnect to websocket
-	if data then
-		init.debugPrint("Websocket error: " .. data)
-	else
-		init.debugPrint("Websocket error not sent")
-	end
-	init.debugPrint("Attempting to reconnect...")
-	sleep(init.config.apiDelay)
-	--pcall(websocket.close)
-	openWebsocket()
-end
-
-function init.ws(connectionType, data)
-	if connectionType == "open" then
-		openWebsocket()
-		init.debugPrint("Websocket opened")
-	elseif connectionType == "send" then
-		local err, result = pcall(init.websocket.send, data)
-		if not err then websocketError(result) end
-		--init.debugPrint("Websocket sent: " .. data)
-	elseif connectionType == "receive" then
-		local err, result = pcall(init.websocket.receive, 1)
-		if not err then websocketError(result) end
-		init.debugPrint("Websocket received: " .. result)
-		return result
-	elseif type == "close" then
-		local err, result = pcall(init.websocket.close)
-		if not err then websocketError(result) end
-		init.debugPrint("Websocket closed")
-	end
-end
-init.ws("open")
-
 
 
 return init
