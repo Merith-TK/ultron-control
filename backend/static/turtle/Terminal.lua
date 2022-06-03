@@ -94,15 +94,16 @@ local function processCmdQueue()
 		turtleData.cmdResult = nil
 		init.debugPrint("Executing cmdQueue")
 		local cmd = table.remove(turtleData.cmdQueue, 1)
+		-- save cmdQueue to file /cmdQueue.json
+		local file = fs.open("/cmdQueue.json", "w")
+		file.write(textutils.serializeJSON(turtleData.cmdQueue))
+		file.close()
 		if cmd then
-			-- remove [" and "] from beginning and end of cmd
-			cmd = cmd:sub(3, -3)
-
 			init.debugPrint("cmd: " .. cmd)
-
 			init.debugPrint("Processing command: " .. cmd)
 			local cmdExec, err = loadstring(cmd)
 			if cmdExec then
+				setfenv(cmdExec, getfenv())
 				local success, result = pcall(cmdExec)
 				if success then
 					--init.debugPrint("[CMD] " .. cmd .. ": " .. result)
@@ -127,17 +128,12 @@ local function recieveOrders()
 		local event, url, data = os.pullEvent("websocket_message")
 		if data then
 			init.debugPrint("Order Recieved: " .. data)
-			table.insert(turtleData.cmdQueue, data)
+			data = textutils.unserializeJSON(data)
+			table.insert(turtleData.cmdQueue, data[1])
 			init.debugPrint("cmdQueue: " .. textutils.serialize(turtleData.cmdQueue))
 		else
 			init.debugPrint("No data recieved")
 		end
-
-		-- save cmdQueue to file /cmdQueue.json
-		local file = fs.open("/cmdQueue.json", "w")
-		file.write(textutils.serializeJSON(turtleData.cmdQueue))
-		file.close()
-
 		processCmdQueue()
 	end
 end
@@ -164,7 +160,7 @@ end
 -- load cmdQueue from file /cmdQueue.json
 local file = fs.open("/cmdQueue.json", "r")
 if file then
-	local cmdQueue = textutils.unserialize(file.readAll())
+	local cmdQueue = textutils.unserializeJSON(file.readAll())
 	file.close()
 	if cmdQueue then
 		turtleData.cmdQueue = cmdQueue

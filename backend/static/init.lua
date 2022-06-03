@@ -103,6 +103,28 @@ if shell.getRunningProgram() == "rom/programs/http/wget.lua" then
 	downloadFiles(init.config.files.all)
 	if turtle then
 		downloadFiles(init.config.files.turtle)
+		local skyrtle = require("/turtle/skyrtle")
+		-- get skyrtle position
+		local x,y,z = skyrtle.getPosition()
+		local facing = skyrtle.getFacing()
+		if x == 0 and y == 0 and z == 0 and facing == 0 then
+			-- get user input for position
+			print("Please enter turtle position")
+			print("Press f3 and look at turtle to get position")
+			print("X Y Z Facing")
+			print("Example: 0 0 0 north")
+			local userPos = read()
+			-- convert userpos to table seperated by spaces
+			local pos = {}
+			for i in string.gmatch(userPos, "%S+") do
+				table.insert(pos, i)
+			end
+			-- create skyrtle file
+			skyrtle.setPosition(tonumber(pos[1]), tonumber(pos[2]), tonumber(pos[3]))
+			skyrtle.setFacing(pos[4])
+		end
+		print("[Skyrtle]: Location ", skyrtle.getPosition())
+		print("[Skyrtle]: Facing ", skyrtle.getFacing())
 	elseif pocket then
 		downloadFiles(init.config.files.pocket)
 	elseif commands then
@@ -111,9 +133,7 @@ if shell.getRunningProgram() == "rom/programs/http/wget.lua" then
 	else
 		downloadFiles(init.config.files.computer)
 	end
-
 	print("[Update] Update complete")
-
 end
 
 --------------------------------------------------------------------------------
@@ -154,7 +174,7 @@ local function websocketError(data)
 	init.debugPrint("Attempting to reconnect...")
 	sleep(init.config.apiDelay)
 	--pcall(websocket.close)
-	--openWebsocket()
+	openWebsocket()
 end
 
 function init.ws(connectionType, data)
