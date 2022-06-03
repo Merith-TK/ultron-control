@@ -35,14 +35,6 @@ init.debugPrint("ApiDelay: " .. config.apiDelay)
 init.debugPrint("Websocket URL: " .. config.ws.turtle)
 init.debugPrint("Websocket Header: " .. textutils.serialize(wsHeader))
 
-
--- local ws, wsErr = http.websocket(config.ws.turtle, wsHeader )
--- while not ws and not debug do
--- 	print("Error: Unable to connect to websocket, trying again")
--- 	sleep(1)
--- 	ws, wsErr = http.websocket(config.ws.turtle, wsHeader )
--- end
-
 -- function to send turtle data to websocket
 local function updateControl()
 	turtleData.id = os.getComputerID()
@@ -90,7 +82,7 @@ local function processCmdQueue()
 	init.debugPrint("Processing cmdQueue")
 	init.debugPrint("cmdQueue: " .. textutils.serialize(turtleData.cmdQueue))
 	-- check if cmdQueue is empty
-	if #turtleData.cmdQueue ~= 0 then
+	while #turtleData.cmdQueue ~= 0 do
 		turtleData.cmdResult = nil
 		init.debugPrint("Executing cmdQueue")
 		local cmd = table.remove(turtleData.cmdQueue, 1)
@@ -124,17 +116,20 @@ end
 
 local function recieveOrders()
 	while true do
+		processCmdQueue()
 		init.debugPrint("Waiting for orders")
 		local event, url, data = os.pullEvent("websocket_message")
 		if data then
 			init.debugPrint("Order Recieved: " .. data)
 			data = textutils.unserializeJSON(data)
-			table.insert(turtleData.cmdQueue, data[1])
+			-- append data table contents to cmdQueue
+			for i = 1, #data do
+				table.insert(turtleData.cmdQueue, data[i])
+			end
 			init.debugPrint("cmdQueue: " .. textutils.serialize(turtleData.cmdQueue))
 		else
 			init.debugPrint("No data recieved")
 		end
-		processCmdQueue()
 	end
 end
 
@@ -154,7 +149,7 @@ local function apiLoop()
 end
 
 local function main()
-	parallel.waitForAll(apiLoop, recieveOrders, processCmdQueue)
+	parallel.waitForAll(apiLoop, recieveOrders)
 end
 
 -- load cmdQueue from file /cmdQueue.json
