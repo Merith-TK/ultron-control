@@ -231,12 +231,14 @@ end
 local function downloadFiles(files)
 	for _, file in ipairs(files) do
 		-- download files using http
-		print("[Downloading]: " .. file)
+		init.debugPrint("Downloading file: " .. file)
  		sleep(init.config.downloadDelay)
  		local url = init.config.luaUrl .. file
+		init.debugPrint(url)
  		local file = fs.open(file, "w")
- 		if http.get(url).readAll() then
- 			file.write(http.get(url).readAll())
+		local dl = http.get(url)
+ 		if dl then
+ 			file.write(dl.readAll())
  		else
  			print("[Error]: Unable to download " .. file)
  		end
@@ -258,36 +260,18 @@ end
 
 -- check if running as sub-shell
 if shell.getRunningProgram() == "rom/programs/http/wget.lua" then
+	-- check if startup exists
+	local startup = false
+	if fs.exists("/startup.lua") then startup = true end
+
 	shell.run("set motd.enable false")
 	term.clear()
 	term.setCursorPos(1,1)
 
-	print("[Updating]: Auto-updating...")
+	print("[Updater]: Auto-updating...")
 	downloadFiles(init.config.files.all)
 	if turtle then
 		downloadFiles(init.config.files.turtle)
-		local skyrtle = require("/turtle/skyrtle")
-		-- get skyrtle position
-		local x,y,z = skyrtle.getPosition()
-		local facing = skyrtle.getFacing()
-		if x == 0 and y == 0 and z == 0 and facing == 0 then
-			-- get user input for position
-			print("Please enter turtle position")
-			print("Press f3 and look at turtle to get position")
-			print("X Y Z Facing")
-			print("Example: 0 0 0 north")
-			local userPos = read()
-			-- convert userpos to table seperated by spaces
-			local pos = {}
-			for i in string.gmatch(userPos, "%S+") do
-				table.insert(pos, i)
-			end
-			-- create skyrtle file
-			skyrtle.setPosition(tonumber(pos[1]), tonumber(pos[2]), tonumber(pos[3]))
-			skyrtle.setFacing(pos[4])
-		end
-		print("[Skyrtle]: Location ", skyrtle.getPosition())
-		print("[Skyrtle]: Facing ", skyrtle.getFacing())
 	elseif pocket then
 		downloadFiles(init.config.files.pocket)
 	elseif commands then
@@ -296,7 +280,17 @@ if shell.getRunningProgram() == "rom/programs/http/wget.lua" then
 	else
 		downloadFiles(init.config.files.computer)
 	end
-	print("[Update] Update complete")
+	print("[Updater] Update complete")
+
+	if not startup then
+		-- check if user wants to reboot
+		print("[Updater]: New Startup Script detected. Would you like to reboot?")
+		print("[Updater]: Reboot? (y/n)")
+		local answer = read()
+		if answer == "y" then
+			os.reboot()
+		end
+	end
 end
 
 

@@ -61,14 +61,11 @@ local function updateControl()
 	turtleData.selectedSlot = turtle.getSelectedSlot()
 
 	for i = 1, 16 do
-		turtle.select(i)
 		local item = turtle.getItemDetail(i, true)
 		if not item then
-			item = {
-				name = "",
-				count = 0,
-				slot = i,
-			}
+			item = 0
+		else 
+			item.slot = i
 		end
 		turtleData.inventory[i] = item
 	end

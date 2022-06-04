@@ -76,6 +76,7 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 		// decode json string into currentTurtle.CmdQueue
 		if err := json.NewDecoder(r.Body).Decode(&currentTurtle.CmdQueue); err != nil {
 			log.Println("[Error] Decoding json:", err)
+			w.Write([]byte("Error: Decoding json " + err.Error()))
 			return
 		}
 
@@ -137,18 +138,24 @@ func turtleWs(w http.ResponseWriter, r *http.Request) {
 		// if cmdQueue is not empty, send cmdQueue to client
 		if len(turtles[pos].CmdQueue) > 0 {
 			// convert cmdQueue to json
-			jsonCmdQueue, _ := json.Marshal(turtles[pos].CmdQueue)
-			// send jsonCmdQueue to client and wait for response
-			err := c.WriteMessage(mt, jsonCmdQueue)
-			if err != nil {
-				log.Println("write:", err)
-				break
-			}
-			
-			// clear cmdQueue
-			turtles[pos].CmdQueue = []string{}
-			currentTurtle.CmdQueue = []string{}
-		}
+			jsonCmdQueue, jsonErr := json.Marshal(turtles[pos].CmdQueue)
+			if jsonErr != nil {
+				log.Println("[Error] Marshalling json:", jsonErr)
+				// return error to client
+				c.WriteMessage(mt, []byte("Error: Marshalling json"))
+
+				// send jsonCmdQueue to client and wait for response
+				err := c.WriteMessage(mt, jsonCmdQueue)
+				if err != nil {
+					log.Println("write:", err)
+					break
+				}
+
+				// clear cmdQueue
+				turtles[pos].CmdQueue = []string{}
+				currentTurtle.CmdQueue = []string{}
+				}
 		saveData()
+		}
 	}
 }
