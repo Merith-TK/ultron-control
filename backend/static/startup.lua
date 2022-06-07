@@ -3,6 +3,10 @@ shell.run("wget run " .. init.config.luaUrl .. "init.lua")
 
 os.pullEvent=os.pullEventRaw
 
+if _G.cloud_catcher then
+	return
+end
+
 if turtle then
 	--- check if skyrtle pos has been initialized
 	--- warning, this is a hack, it will not work if the turtle is actually located at (0,0,0) and facing north

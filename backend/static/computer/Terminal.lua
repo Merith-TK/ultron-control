@@ -30,7 +30,8 @@ local function updateControl()
 			computerData.name = tostring(computerData.id)
 		end
 
-		init.ws("send",computerData)
+		local data = textutils.serializeJSON(computerData)
+		init.ws("send",data)
 		init.waitForDelay()
 	end
 end

@@ -14,7 +14,7 @@ var computers []Computer
 type Computer struct {
 	Name      string        `json:"name"`
 	ID        int           `json:"id"`
-	CmdResult string        `json:"cmdResult"`
+	CmdResult []interface{} `json:"cmdResult"`
 	CmdQueue  []string      `json:"cmdQueue"`
 	MiscData  []interface{} `json:"miscData"`
 }
@@ -96,11 +96,14 @@ func computerWs(w http.ResponseWriter, r *http.Request) {
 			// update currentComputer in computers
 			computers[pos] = currentComputer
 		}
-		if currentComputer.CmdResult != "" {
+
+		// check if cmdResult is empty
+		if len(currentComputer.CmdResult) == 0 {
 			// log result
-			log.Println("[Computer]", currentComputer.Name, ":", currentComputer.CmdResult)
-			// clear result
-			currentComputer.CmdResult = ""
+			//log.Println("[Computer]", currentComputer.Name, ":", currentComputer.CmdResult)
+
+			// clear currentComputer.CmdResult
+			currentComputer.CmdResult = []interface{}{}
 			computers[pos] = currentComputer
 		}
 		// if cmdQueue is not empty, send cmdQueue to client

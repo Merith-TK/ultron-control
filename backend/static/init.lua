@@ -1,8 +1,8 @@
 local init = {}
 local cID = os.getComputerID()
-init.url = "http://localhost:3300/"
+init.url = "https://ultron.merith.xyz/"
 init.config = {
-	debug = true,
+	debug = false,
 	ws = {
 		turtle = init.url .. "turtlews",
 		pocket = init.url .. "pocketws",
@@ -41,6 +41,7 @@ init.config = {
 		turtle = {
 			"turtle/skyrtle.lua",
 			"turtle/Terminal.lua",
+			"world-post.lua",
 		},
 		pocket = {
 			"pocket/Terminal.lua",
@@ -75,7 +76,27 @@ init.turtleData = {
 	},
 	selectedSlot = 0,
 	inventory = {},
-	cmdResult = nil,
+	cmdResult = {},
+	cmdQueue = {},
+	miscData = {},
+}
+init.computerData = {
+	name = "",
+	id = 0,
+	cmdResult = {},
+	cmdQueue = {},
+	miscData = {},
+}
+init.pocketData = {
+	name = "",
+	id = 0,
+	pos = {
+		x = 0,
+		y = 0,
+		z = 0,
+		r = 0,
+	},
+	cmdResult = {},
 	cmdQueue = {},
 	miscData = {},
 }
@@ -101,6 +122,74 @@ function init.debugPrint(str)
 end
 
 init.debugPrint("Enabled")
+
+--------------------------------------------------------------------------------
+-- system setup
+--------------------------------------------------------------------------------
+
+local function downloadFiles(files)
+	for _, file in ipairs(files) do
+		-- download files using http
+		init.debugPrint("Downloading file: " .. file)
+ 		sleep(init.config.downloadDelay)
+ 		local url = init.config.luaUrl .. file
+		init.debugPrint(url)
+ 		local file = fs.open(file, "w")
+		local dl = http.get(url)
+ 		if dl then
+ 			file.write(dl.readAll())
+ 		else
+ 			print("[Error]: Unable to download " .. file)
+ 		end
+ 		file.close()
+ 	end
+end
+
+-- create websocket based off of what type of computer we are running on
+if turtle then
+	init.currentData = init.turtleData
+	init.config.ws.current = init.config.ws.turtle
+	init.config.wsHeader.current = init.config.wsHeader.turtle
+elseif pocket then
+	init.currentData = init.pocketData
+	init.config.ws.current = init.config.ws.pocket
+	init.config.wsHeader.current = init.config.wsHeader.pocket
+else
+	init.currentData = init.computerData
+	init.config.ws.current = init.config.ws.computer
+	init.config.wsHeader.current = init.config.wsHeader.computer
+end
+
+-- check if running as sub-shell
+if shell.getRunningProgram() == "rom/programs/http/wget.lua" then
+	-- check if startup exists
+	local startup = false
+	if fs.exists("/startup.lua") then startup = true end
+
+	shell.run("set motd.enable false")
+	term.clear()
+	term.setCursorPos(1,1)
+
+	print("[Updater]: Auto-updating...")
+	downloadFiles(init.config.files.all)
+	if turtle then
+		downloadFiles(init.config.files.turtle)
+	elseif pocket then
+		downloadFiles(init.config.files.pocket)
+	elseif commands then
+		print("[Error]: This program is not compatible with the Command Computer for security reasons.")
+		return
+	else
+		downloadFiles(init.config.files.computer)
+	end
+	print("[Updater] Update complete")
+
+	if not startup then
+		os.reboot()
+	end
+end
+
+
 
 -- open websocket
 init.websocket = {}
@@ -197,16 +286,18 @@ function init.processCmdQueue(cmdQueue)
 				if cmd then
 					local cmdExec, err = loadstring(cmd)
 					if cmdExec then
-						print("Executing command: " .. "\n" .. cmd)
+						print("[cmd:in] = " .. cmd)
 						setfenv(cmdExec, getfenv())
-						local success, result = pcall(cmdExec)
-							cmdResult = result
-							print("Command result: " .. tostring(result))
+						local result = {pcall(cmdExec)}
+						cmdResult = result
+						if result then
+							result = textutils.serialize(cmdResult)
+						end
+						print("[cmd:out] = " .. tostring(result))
 					else
-						cmdResult = ""
+						cmdResult = {}
 					end
 				end
-				print("Commands left: " .. #init.currentData.cmdQueue)
 				init.currentData.cmdResult = cmdResult
 			end
 		else
@@ -251,80 +342,6 @@ function init.waitForDelay()
 	--init.debugPrint("Waiting for apiDelay")
 	sleep(init.config.apiDelay)
 end
-
-
---------------------------------------------------------------------------------
--- setup system
---------------------------------------------------------------------------------
--- download files
-local function downloadFiles(files)
-	for _, file in ipairs(files) do
-		-- download files using http
-		init.debugPrint("Downloading file: " .. file)
- 		sleep(init.config.downloadDelay)
- 		local url = init.config.luaUrl .. file
-		init.debugPrint(url)
- 		local file = fs.open(file, "w")
-		local dl = http.get(url)
- 		if dl then
- 			file.write(dl.readAll())
- 		else
- 			print("[Error]: Unable to download " .. file)
- 		end
- 		file.close()
- 	end
-end
-
--- create websocket based off of what type of computer we are running on
-if turtle then
-	init.currentData = init.turtleData
-	init.config.ws.current = init.config.ws.turtle
-	init.config.wsHeader.current = init.config.wsHeader.turtle
-elseif pocket then
-	init.currentData = init.pocketData
-	init.config.ws.current = init.config.ws.pocket
-	init.config.wsHeader.current = init.config.wsHeader.pocket
-else
-	init.currentData = init.computerData
-	init.config.ws.current = init.config.ws.computer
-	init.config.wsHeader.current = init.config.wsHeader.computer
-end
-
--- check if running as sub-shell
-if shell.getRunningProgram() == "rom/programs/http/wget.lua" then
-	-- check if startup exists
-	local startup = false
-	if fs.exists("/startup.lua") then startup = true end
-
-	shell.run("set motd.enable false")
-	term.clear()
-	term.setCursorPos(1,1)
-
-	print("[Updater]: Auto-updating...")
-	downloadFiles(init.config.files.all)
-	if turtle then
-		downloadFiles(init.config.files.turtle)
-	elseif pocket then
-		downloadFiles(init.config.files.pocket)
-	elseif commands then
-		print("[Error]: This program is not compatible with the Command Computer for security reasons.")
-		return
-	else
-		downloadFiles(init.config.files.computer)
-	end
-	print("[Updater] Update complete")
-
-	if not startup then
-		-- check if user wants to reboot
-		print("[Updater]: New Startup Script detected. Would you like to reboot?")
-		print("[Updater]: Reboot? (y/n)")
-		local answer = read()
-		if answer == "y" then
-			os.reboot()
-		end
-	end
-end
-
 
 return init
 
