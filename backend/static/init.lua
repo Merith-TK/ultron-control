@@ -9,7 +9,6 @@ init.config = {
 		computer = init.url .. "computerws",
 	},
 	wsHeader = {
-		current = nil,
 		turtle = {
 			"turtle",
 			tostring(cID),
@@ -59,8 +58,28 @@ init.config = {
 	apiDelay = 1,
 }
 
-init.cmdResult = false
-init.cmdQueue = {}
+init.currentData = {}
+init.turtleData = {
+	name = "",
+	id = 0,
+	pos = {
+		x = 0,
+		y = 0,
+		z = 0,
+		r = 0,
+		rname = "",
+	},
+	fuel = {
+		current = 0,
+		max = 0,
+	},
+	selectedSlot = 0,
+	inventory = {},
+	cmdResult = nil,
+	cmdQueue = {},
+	miscData = {},
+}
+
 
 -- replace all http with ws in init.config.ws
 for i, v in pairs(init.config.ws) do
@@ -89,6 +108,7 @@ local function openWebsocket()
 	local ws = http.websocket(init.config.ws.current, init.config.wsHeader.current)
 	if ws then
 		init.websocket = ws
+		init.debugPrint("Websocket opened")
 		return true
 	else
 		return false
@@ -110,7 +130,6 @@ end
 function init.ws(connectionType, data)
 	if connectionType == "open" then
 		openWebsocket()
-		init.debugPrint("Websocket opened")
 	elseif connectionType == "send" then
 		local err, result = pcall(init.websocket.send, data)
 		if not err then websocketError(result) end
@@ -128,37 +147,68 @@ function init.ws(connectionType, data)
 end
 
 --------------------------------------------------------------------------------
+-- loadCommandQueue()
+-- Loads the command queue from file
+function init.loadCommandQueue()
+	local cmdQueue = {}
+	local file = fs.open("/cmdQueue.json", "r")
+	if file then
+		local data = file.readAll()
+		file.close()
+		if data then
+			cmdQueue = textutils.unserializeJSON(data)
+			init.debugPrint("cmdQueue: " .. textutils.serialize(cmdQueue))
+			return cmdQueue
+		else
+			init.debugPrint("cmdQueue: " .. textutils.serialize(cmdQueue))
+			return cmdQueue
+		end
+	else
+		init.debugPrint("cmdQueue: " .. textutils.serialize(cmdQueue))
+		init.currentData.cmdQueue = cmdQueue
+	end
+end
+
+--------------------------------------------------------------------------------
+-- saveCommandQueue()
+-- Saves the command queue to file
+function init.saveCommandQueue()
+	local file = fs.open("/cmdQueue.json", "w")
+	if file then
+		file.write(textutils.serializeJSON(init.currentData.cmdQueue))
+		file.close()
+	end
+end
+
+--------------------------------------------------------------------------------
 -- processQueue(queue)
 -- Processes the queue
 
 function init.processCmdQueue(cmdQueue)
 	while true do
 		-- check if cmdQueue is empty
-		if #init.cmdQueue ~= 0 then
-			while #init.cmdQueue ~= 0 do
+		if #init.currentData.cmdQueue ~= 0 then
+			while #init.currentData.cmdQueue ~= 0 do
 				cmdResult = nil
-				init.debugPrint("Executing init.cmdQueue")
-				local cmd = table.remove(init.cmdQueue, 1)
-				print("Executing cmd: " .. cmd)
+				local cmd = table.remove(init.currentData.cmdQueue, 1)
 				local file = fs.open("/cmdQueue.json", "w")
-				file.write(textutils.serializeJSON(init.cmdQueue))
+				file.write(textutils.serializeJSON(init.currentData.cmdQueue))
 				file.close()
 				if cmd then
-					init.debugPrint("cmd: " .. cmd)
-					init.debugPrint("Processing command: " .. cmd)
 					local cmdExec, err = loadstring(cmd)
 					if cmdExec then
-						print("Executing command: " .. cmd)
+						print("Executing command: " .. "\n" .. cmd)
 						setfenv(cmdExec, getfenv())
 						local success, result = pcall(cmdExec)
 							cmdResult = result
+							print("Command result: " .. tostring(result))
 					else
-						cmdResult = nil
+						cmdResult = ""
 					end
 				end
-				print("Commands left: " .. #init.cmdQueue)
+				print("Commands left: " .. #init.currentData.cmdQueue)
+				init.currentData.cmdResult = cmdResult
 			end
-			init.cmdResult = cmdResult
 		else
 			sleep()
 		end
@@ -175,45 +225,24 @@ function init.recieveOrders()
 		if data then
 			init.debugPrint("Order Recieved: " .. data)
 			data = textutils.unserializeJSON(data)
-			-- append data table contents to init.cmdQueue
+			-- append data table contents to init.currentData.cmdQueue
 			for i = 1, #data do
 				if data[i] == "ultron.break()" then
-					-- clear init.cmdQueue
-					init.cmdQueue = {}
+					init.currentData.cmdQueue = {}
+					init.saveCommandQueue()
+					
 					os.reboot()
 				end
-				table.insert(init.cmdQueue, data[i])
+				table.insert(init.currentData.cmdQueue, data[i])
 			end
-			init.debugPrint("cmdQueue: " .. textutils.serialize(init.cmdQueue))
+			init.debugPrint("cmdQueue: " .. textutils.serialize(init.currentData.cmdQueue))
 		else
 			init.debugPrint("No data recieved")
 		end
 	end
 end
 
---------------------------------------------------------------------------------
--- loadCommandQueue()
--- Loads the command queue from file
-function init.loadCommandQueue()
-	local cmdQueue = {}
-	local file = fs.open("/cmdQueue.json", "r")
-	if file then
-		local data = file.readAll()
-		file.close()
-		if data then
-			init.debugPrint("cmdQueue: " .. data)
-			cmdQueue = textutils.unserializeJSON(data)
-			init.debugPrint("cmdQueue: " .. textutils.serialize(cmdQueue))
-			return cmdQueue
-		else
-			init.debugPrint("cmdQueue: " .. textutils.serialize(cmdQueue))
-			return cmdQueue
-		end
-	else
-		init.debugPrint("cmdQueue: " .. textutils.serialize(cmdQueue))
-		init.cmdQueue = cmdQueue
-	end
-end
+
 
 --------------------------------------------------------------------------------
 -- waitForDelay()
@@ -248,12 +277,15 @@ end
 
 -- create websocket based off of what type of computer we are running on
 if turtle then
+	init.currentData = init.turtleData
 	init.config.ws.current = init.config.ws.turtle
 	init.config.wsHeader.current = init.config.wsHeader.turtle
 elseif pocket then
+	init.currentData = init.pocketData
 	init.config.ws.current = init.config.ws.pocket
 	init.config.wsHeader.current = init.config.wsHeader.pocket
 else
+	init.currentData = init.computerData
 	init.config.ws.current = init.config.ws.computer
 	init.config.wsHeader.current = init.config.wsHeader.computer
 end

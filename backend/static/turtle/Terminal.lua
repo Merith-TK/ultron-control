@@ -1,24 +1,3 @@
-local turtleData = {
-	name = "",
-	id = 0,
-	pos = {
-		x = 0,
-		y = 0,
-		z = 0,
-		r = 0,
-		rname = "",
-	},
-	fuel = {
-		current = 0,
-		max = 0,
-	},
-	selectedSlot = 0,
-	inventory = {
-	},
-	cmdResult = nil,
-	cmdQueue = {},
-	miscData = {},
-}
 
 -- function to recieve commands from websocket
 
@@ -38,103 +17,50 @@ init.debugPrint("Websocket Header: " .. textutils.serialize(wsHeader))
 
 -- function to send turtle data to websocket
 local function updateControl()
-	turtleData.id = os.getComputerID()
+	init.currentData.id = os.getComputerID()
 	local label = os.getComputerLabel()
 	if label and not label == "" then
-		turtleData.name = label
+		init.currentData.name = label
 	else
-		os.setComputerLabel(tostring(turtleData.id))
-		turtleData.name = tostring(turtleData.id)
+		os.setComputerLabel(tostring(init.currentData.id))
+		init.currentData.name = tostring(init.currentData.id)
 	end
 
 	local x,y,z = skyrtle.getPosition()
 	local r, rname = skyrtle.getFacing()
-	turtleData.pos.x = x
-	turtleData.pos.y = y
-	turtleData.pos.z = z
-	turtleData.pos.r = r
-	turtleData.pos.rname = rname
+	init.currentData.pos.x = x
+	init.currentData.pos.y = y
+	init.currentData.pos.z = z
+	init.currentData.pos.r = r
+	init.currentData.pos.rname = rname
 
-	turtleData.fuel.current = turtle.getFuelLevel()
-	turtleData.fuel.max = turtle.getFuelLimit()
+	init.currentData.fuel.current = turtle.getFuelLevel()
+	init.currentData.fuel.max = turtle.getFuelLimit()
 
-	turtleData.selectedSlot = turtle.getSelectedSlot()
+	init.currentData.selectedSlot = turtle.getSelectedSlot()
 
 	for i = 1, 16 do
 		local item = turtle.getItemDetail(i, true)
-		if not item then
-			item = 0
-		else 
-			item.slot = i
+		if item then
+			init.currentData.inventory[i] = item
+		else
+			init.currentData.inventory[i] = {}
 		end
-		turtleData.inventory[i] = item
 	end
-	turtle.select(turtleData.selectedSlot)
+	turtle.select(init.currentData.selectedSlot)
 
-	local TurtleData =  textutils.serializeJSON(turtleData)
+	local TurtleData =  textutils.serializeJSON(init.currentData)
 	init.ws("send",TurtleData)
 end
 
--- process cmdQueue as function
-local function processCmdQueue()
-	while true do
-		init.debugPrint("Processing cmdQueue")
-		init.debugPrint("cmdQueue: " .. textutils.serialize(turtleData.cmdQueue))
-		-- check if cmdQueue is empty
-		if #turtleData.cmdQueue ~= 0 then
-			while #turtleData.cmdQueue ~= 0 do
-				turtleData.cmdResult = nil
-				init.debugPrint("Executing cmdQueue")
-				local cmd = table.remove(turtleData.cmdQueue, 1)
-				print("Executing cmd: " .. cmd)
-				local file = fs.open("/cmdQueue.json", "w")
-				file.write(textutils.serializeJSON(turtleData.cmdQueue))
-				file.close()
-				if cmd then
-					init.debugPrint("cmd: " .. cmd)
-					init.debugPrint("Processing command: " .. cmd)
-					local cmdExec, err = loadstring(cmd)
-					if cmdExec then
-						print("Executing command: " .. cmd)
-						setfenv(cmdExec, getfenv())
-						local success, result = pcall(cmdExec)
-							turtleData.cmdResult = result
-							print("cmdResult: " .. textutils.serialize(turtleData.cmdResult))
-					else
-						init.debugPrint("[CMD] " .. cmd .. ": " .. err)
-						turtleData.cmdResult = nil
-					end
-				end
-				print("Commands left: " .. #turtleData.cmdQueue)
-			end
-		end
-		sleep(config.apiDelay)
-	end
-end
-
-
-
+-- process cmdQueue as functionlocal function recieveOrders()
 local function recieveOrders()
-	while true do
-		--processCmdQueue()
-		init.debugPrint("Waiting for orders")
-		local event, url, data = os.pullEvent("websocket_message")
-		if data then
-			init.debugPrint("Order Recieved: " .. data)
-			data = textutils.unserializeJSON(data)
-			-- append data table contents to cmdQueue
-			for i = 1, #data do
-				if data[i] == "ultron.break()" then
-					-- clear cmdQueue
-					turtleData.cmdQueue = {}
-					os.reboot()
-				end
-				table.insert(turtleData.cmdQueue, data[i])
-			end
-			init.debugPrint("cmdQueue: " .. textutils.serialize(turtleData.cmdQueue))
-		else
-			init.debugPrint("No data recieved")
-		end
+	init.currentData.cmdQueue = init.recieveOrders(init.currentData.cmdQueue)
+end
+local function processCmdQueue()
+	local result = init.processCmdQueue(init.currentData.cmdQueue)
+	if result then
+		init.currentData.cmdResult = result
 	end
 end
 
@@ -163,7 +89,7 @@ if file then
 	local cmdQueue = textutils.unserializeJSON(file.readAll())
 	file.close()
 	if cmdQueue then
-		turtleData.cmdQueue = cmdQueue
+		init.currentData.cmdQueue = cmdQueue
 	end
 end
 
