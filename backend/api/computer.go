@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -10,23 +10,23 @@ import (
 )
 
 var computers []Computer
-type Computer struct {
-	Name string `json:"name"`
-	ID int `json:"id"`
-	CmdResult string `json:"cmdResult"`
-	CmdQueue []string `json:"cmdQueue"`
-	MiscData []interface{} `json:"miscData"`
-}
 
+type Computer struct {
+	Name      string        `json:"name"`
+	ID        int           `json:"id"`
+	CmdResult string        `json:"cmdResult"`
+	CmdQueue  []string      `json:"cmdQueue"`
+	MiscData  []interface{} `json:"miscData"`
+}
 
 // handle computer api
 func handleComputerApi(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	id := vars["id"]
-	idInt,_ := strconv.Atoi(id)
+	idInt, _ := strconv.Atoi(id)
 	//action := vars["action"]
-	
+
 	// check if id is in computers
 	var currentComputer Computer
 	//found := false
@@ -56,7 +56,6 @@ func handleComputerApi(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 // handle computer websocket
 func computerWs(w http.ResponseWriter, r *http.Request) {
 	c, err := upgrader.Upgrade(w, r, nil)
@@ -74,7 +73,7 @@ func computerWs(w http.ResponseWriter, r *http.Request) {
 
 		// create empty CurrentComputer
 		var currentComputer Computer
-		
+
 		//decode json message onto currentComputer
 		json.Unmarshal(message, &currentComputer)
 
@@ -114,11 +113,10 @@ func computerWs(w http.ResponseWriter, r *http.Request) {
 				log.Println("write:", err)
 				break
 			}
-			
+
 			// clear cmdQueue
 			computers[pos].CmdQueue = []string{}
 			currentComputer.CmdQueue = []string{}
 		}
-		saveData()
 	}
 }

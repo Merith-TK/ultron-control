@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"net/http"
@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func createApiServer() {
+func CreateApiServer(domain string, port int, luaFiles string) {
 	// // create webserver on port 3300
 	//go func() {
 	r := mux.NewRouter()
@@ -20,7 +20,7 @@ func createApiServer() {
 	})
 
 	// Serve Turtle Files
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(config.LuaFiles))))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(luaFiles))))
 
 	// handle /api/computer
 	r.HandleFunc("/api/computer", handleComputerApi).Methods("GET", "POST")
@@ -40,15 +40,15 @@ func createApiServer() {
 	r.HandleFunc("/api", handleGlobalApi)
 
 	r.HandleFunc("/turtlews", turtleWs)
-	r.HandleFunc("/pocketws", api.pocketWs)
+	r.HandleFunc("/pocketws", pocketWs)
 	r.HandleFunc("/computerws", computerWs)
 
 	// if page not found, return server error
 	r.NotFoundHandler = http.HandlerFunc(handleServerError)
 
 	// start webserver on config.Port
-	port := strconv.Itoa(config.Port)
-	http.ListenAndServe(":"+port, r)
+	portstr := strconv.Itoa(port)
+	http.ListenAndServe(domain+":"+portstr, r)
 }
 
 // make function to handle server errors

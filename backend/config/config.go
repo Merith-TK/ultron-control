@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"flag"
@@ -9,14 +9,14 @@ import (
 )
 
 type Config struct {
-	Host string `toml:"host"`
-	Port int    `toml:"port"`
-	LuaFiles string `toml:"luafiles"`
+	Host       string `toml:"host"`
+	Port       int    `toml:"port"`
+	LuaFiles   string `toml:"luafiles"`
 	UltronData string `toml:"ultron_data"`
 }
 
 var (
-	config Config
+	config     Config
 	configfile = "config.toml"
 	configtoml = `## Define Host for the API server
 host = "localhost"
@@ -31,10 +31,15 @@ ultron_data = "../ultron_data"
 `
 )
 
+// make this function public
+func GetConfig() Config {
+	return config
+}
+
 // setup config
-func setupConfig() {
+func SetupConfig() {
 	// read config for default values
-	readConfig()
+	ReadConfig()
 
 	// create flag for config.Port
 	flag.IntVar(&config.Port, "port", 3300, "Port for the API server")
@@ -50,7 +55,7 @@ func setupConfig() {
 }
 
 //read config from config.toml
-func readConfig() {
+func ReadConfig() {
 	// Check if file is readable, if not, make the file
 	str, fileErr := os.ReadFile(configfile)
 	if fileErr != nil {
@@ -65,6 +70,12 @@ func readConfig() {
 	}
 	// print config
 	log.Println("Config:", config)
+
+	// if config.UltronData deoes not exist, create it
+	if _, err := os.Stat(config.UltronData); os.IsNotExist(err) {
+		log.Println("Ultron data directory does not exist, creating it")
+		os.Mkdir(config.UltronData, 0777)
+	}
 }
 
 // create config.toml file and fill it with string
@@ -81,5 +92,5 @@ func createConfig() {
 		log.Fatal("Cannot write to file", err)
 	}
 	// read config.toml file
-	readConfig()
+	ReadConfig()
 }

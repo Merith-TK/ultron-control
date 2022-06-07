@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -9,37 +9,36 @@ import (
 	"github.com/gorilla/mux"
 )
 
-
 var turtles []Turtle
+
 type Turtle struct {
 	Name         string        `json:"name"`
 	ID           int           `json:"id"`
 	Inventory    []interface{} `json:"inventory"`
 	SelectedSlot int           `json:"selectedSlot"`
 	Pos          struct {
-		Y int `json:"y"`
-		X int `json:"x"`
-		Z int `json:"z"`
-		R int `json:"r"`
+		Y     int    `json:"y"`
+		X     int    `json:"x"`
+		Z     int    `json:"z"`
+		R     int    `json:"r"`
 		Rname string `json:"rname"`
 	} `json:"pos"`
 	Fuel struct {
 		Current int `json:"current"`
 		Max     int `json:"max"`
 	} `json:"fuel"`
-	
-	CmdResult string `json:"cmdResult"`
-	CmdQueue []string `json:"cmdQueue"`
-	MiscData []interface{} `json:"miscData"`
-}
 
+	CmdResult string        `json:"cmdResult"`
+	CmdQueue  []string      `json:"cmdQueue"`
+	MiscData  []interface{} `json:"miscData"`
+}
 
 func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
-	idInt,_ := strconv.Atoi(id)
+	idInt, _ := strconv.Atoi(id)
 	action := vars["action"]
-	
+
 	// check if id is in turtles
 	var currentTurtle Turtle
 	found := false
@@ -58,12 +57,12 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 		currentTurtle.Name = "debug"
 		currentTurtle.CmdQueue = []string{}
 		currentTurtle.CmdResult = ""
-		found = true 
+		found = true
 		turtles = append(turtles, currentTurtle)
 	}
 
 	// http://localhost:3300/api/turtle/1
-	
+
 	if r.Method == "GET" {
 		// return turtle data on /api/turtle/{id}
 		if id == "" {
@@ -76,7 +75,7 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 				//return all turtle data
 				json.NewEncoder(w).Encode(turtles)
 			}
-		
+
 		} else if id != "" {
 			if !found {
 				returnError(w, http.StatusServiceUnavailable, "Turtle has not been added yet")
@@ -136,7 +135,7 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 // handle turtle websocket
 func turtleWs(w http.ResponseWriter, r *http.Request) {
 	// message should come in as json
-	
+
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Print("upgrade:", err)
@@ -153,7 +152,7 @@ func turtleWs(w http.ResponseWriter, r *http.Request) {
 
 		// create empty CurrentTurtle
 		var currentTurtle Turtle
-		
+
 		//decode json message onto currentTurtle
 		json.Unmarshal(message, &currentTurtle)
 
@@ -202,7 +201,7 @@ func turtleWs(w http.ResponseWriter, r *http.Request) {
 				// return error to client
 				c.WriteMessage(mt, []byte("Error: Marshalling json"))
 			}
-				// send jsonCmdQueue to client and wait for response
+			// send jsonCmdQueue to client and wait for response
 			err := c.WriteMessage(mt, jsonCmdQueue)
 			if err != nil {
 				log.Println("write:", err)
@@ -213,7 +212,5 @@ func turtleWs(w http.ResponseWriter, r *http.Request) {
 			turtles[pos].CmdQueue = []string{}
 			currentTurtle.CmdQueue = []string{}
 		}
-		saveData()
 	}
 }
-

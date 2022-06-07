@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"encoding/json"
@@ -9,14 +9,15 @@ import (
 )
 
 var pockets []Pocket
+
 type Pocket struct {
 	Name string `json:"name"`
-	ID int `json:"id"`
-	Pos struct {
-		Y int `json:"y"`
-		X int `json:"x"`
-		Z int `json:"z"`
-		R int `json:"r"`
+	ID   int    `json:"id"`
+	Pos  struct {
+		Y     int    `json:"y"`
+		X     int    `json:"x"`
+		Z     int    `json:"z"`
+		R     int    `json:"r"`
 		Rname string `json:"rname"`
 	} `json:"pos"`
 	MiscData []interface{} `json:"miscData"`
@@ -47,7 +48,7 @@ func pocketWs(w http.ResponseWriter, r *http.Request) {
 				// convert turtles to json
 				jsonTurtles, _ := json.Marshal(turtles)
 				// send turtle data
-				err = ws.WriteMessage(websocket.TextMessage, []byte(jsonTurtles))	
+				err = ws.WriteMessage(websocket.TextMessage, []byte(jsonTurtles))
 				if err != nil {
 					log.Println(err)
 					break
