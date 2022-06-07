@@ -9,6 +9,16 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var computers []Computer
+type Computer struct {
+	Name string `json:"name"`
+	ID int `json:"id"`
+	CmdResult string `json:"cmdResult"`
+	CmdQueue []string `json:"cmdQueue"`
+	MiscData []interface{} `json:"miscData"`
+}
+
+
 // handle computer api
 func handleComputerApi(w http.ResponseWriter, r *http.Request) {
 

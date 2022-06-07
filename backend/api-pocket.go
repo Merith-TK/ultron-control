@@ -8,6 +8,20 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+var pockets []Pocket
+type Pocket struct {
+	Name string `json:"name"`
+	ID int `json:"id"`
+	Pos struct {
+		Y int `json:"y"`
+		X int `json:"x"`
+		Z int `json:"z"`
+		R int `json:"r"`
+		Rname string `json:"rname"`
+	} `json:"pos"`
+	MiscData []interface{} `json:"miscData"`
+}
+
 // handle pocket websocket
 func pocketWs(w http.ResponseWriter, r *http.Request) {
 	// upgrade to websocket
