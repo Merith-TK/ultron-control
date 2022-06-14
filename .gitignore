@@ -1,6 +1,7 @@
+.docker
+.vscode
 ultron.code-workspace
 ultron_data
-.vscode
 temp/
 tmp/
 vendor/

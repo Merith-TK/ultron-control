@@ -1,0 +1,22 @@
+version: "3.0"
+
+networks:
+  ultron:
+
+volumes:
+  air_cache:
+
+services:
+  ultron-backend:
+    user: "1001:1001"
+    image: cosmtrek/air
+    container_name: ultron-backend
+    working_dir: /ultron-api/backend
+    networks:
+      - ultron
+    ports:
+      - 3300:3300
+    volumes:
+      - ./:/ultron-api/
+      - ./.docker/.cache:/.cache
+      
