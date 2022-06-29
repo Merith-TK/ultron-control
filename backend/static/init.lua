@@ -1,12 +1,12 @@
 local init = {}
 local cID = os.getComputerID()
-init.url = "https://ultron.merith.xyz/"
+init.url = "http://ultron-backend:3300/"
 init.config = {
 	debug = false,
 	ws = {
-		turtle = init.url .. "turtlews",
-		pocket = init.url .. "pocketws",
-		computer = init.url .. "computerws",
+		turtle = init.url .. "api/turtle/ws",
+		pocket = init.url .. "api/pocket/ws",
+		computer = init.url .. "api/computer/ws",
 	},
 	wsHeader = {
 		turtle = {

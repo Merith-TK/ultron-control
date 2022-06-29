@@ -20,7 +20,7 @@ func CreateApiServer(domain string, port int, luaFiles string) {
 	})
 
 	// Serve Turtle Files
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(luaFiles))))
+	r.PathPrefix("/api/static/").Handler(http.StripPrefix("/api/static/", http.FileServer(http.Dir(luaFiles))))
 
 	// handle /api/computer
 	r.HandleFunc("/api/computer", handleComputerApi).Methods("GET", "POST")
@@ -39,9 +39,9 @@ func CreateApiServer(domain string, port int, luaFiles string) {
 	//handle global api on /api/v1
 	r.HandleFunc("/api", handleGlobalApi)
 
-	r.HandleFunc("/turtlews", turtleWs)
-	r.HandleFunc("/pocketws", pocketWs)
-	r.HandleFunc("/computerws", computerWs)
+	r.HandleFunc("/api/turtle/ws", turtleWs)
+	r.HandleFunc("/api/pocket/ws", pocketWs)
+	r.HandleFunc("/api/computer/ws", computerWs)
 
 	// if page not found, return server error
 	r.NotFoundHandler = http.HandlerFunc(handleServerError)
@@ -53,7 +53,7 @@ func CreateApiServer(domain string, port int, luaFiles string) {
 
 // make function to handle server errors
 func handleServerError(w http.ResponseWriter, r *http.Request) {
-	returnError(w, http.StatusNotImplemented, "Server Error: Check for trailing / in url")
+	returnError(w, http.StatusNotImplemented, "Server Error: Check for trailing / in url, or verify against documentation of API")
 }
 
 func returnError(w http.ResponseWriter, code int, message string) {
