@@ -1,6 +1,6 @@
 local init = {}
 local cID = os.getComputerID()
-init.url = "http://ultron-api:3300/api/"
+init.url = "https://3300-merithtk-ultroncontrol-mt49h192b8t.ws-us54.gitpod.io/api/"
 init.config = {
 	debug = true,
 	ws = {
@@ -294,11 +294,12 @@ function init.processCmdQueue(cmdQueue)
 							result = textutils.serialize(cmdResult)
 						end
 						print("[cmd:out] = " .. tostring(result))
-					else
-						cmdResult = {}
+						init.currentData.cmdResult = cmdResult
+					-- else
+					-- 	cmdResult = {}
 					end
 				end
-				init.currentData.cmdResult = cmdResult
+				--init.currentData.cmdResult = cmdResult
 			end
 		else
 			sleep()

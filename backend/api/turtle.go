@@ -28,7 +28,7 @@ type Turtle struct {
 		Max     int `json:"max"`
 	} `json:"fuel"`
 
-	CmdResult string        `json:"cmdResult"`
+	CmdResult []interface{} `json:"cmdResult"`
 	CmdQueue  []string      `json:"cmdQueue"`
 	MiscData  []interface{} `json:"miscData"`
 }
@@ -56,7 +56,7 @@ func handleTurtleApi(w http.ResponseWriter, r *http.Request) {
 		currentTurtle.ID = -1
 		currentTurtle.Name = "debug"
 		currentTurtle.CmdQueue = []string{}
-		currentTurtle.CmdResult = ""
+		currentTurtle.CmdResult = nil
 		found = true
 		turtles = append(turtles, currentTurtle)
 	}
@@ -165,7 +165,7 @@ func turtleWs(w http.ResponseWriter, r *http.Request) {
 			currentTurtle.ID = -1
 			currentTurtle.Name = "debug"
 			currentTurtle.CmdQueue = []string{}
-			currentTurtle.CmdResult = ""
+			currentTurtle.CmdResult = nil
 			found = true
 			turtles = append(turtles, currentTurtle)
 		} else {
@@ -188,7 +188,7 @@ func turtleWs(w http.ResponseWriter, r *http.Request) {
 			turtles[pos] = currentTurtle
 		}
 		// check if currentTurtle.CmdResult is the same as turtles[pos].CmdResult
-		if currentTurtle.CmdResult != turtles[pos].CmdResult {
+		if len(currentTurtle.CmdResult) != len(turtles[pos].CmdResult) {
 			// log result
 			log.Println("[Turtle]", currentTurtle.Name, ":", currentTurtle.CmdResult)
 		}
