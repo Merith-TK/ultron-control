@@ -1,6 +1,6 @@
 local init = {}
 local cID = os.getComputerID()
-init.url = "https://3300-merithtk-ultroncontrol-mt49h192b8t.ws-us54.gitpod.io/api/"
+init.url = "http://ultron-api:3300/api/"
 init.config = {
 	debug = true,
 	ws = {
