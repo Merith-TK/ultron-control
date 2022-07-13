@@ -39,9 +39,9 @@ func CreateApiServer(domain string, port int, luaFiles string) {
 	//handle global api on /api/v1
 	r.HandleFunc("/api", handleGlobalApi)
 
-	r.HandleFunc("/api/turtle/ws", turtleWs)
-	r.HandleFunc("/api/pocket/ws", pocketWs)
-	r.HandleFunc("/api/computer/ws", computerWs)
+	r.HandleFunc("/api/turtlews", turtleWs)
+	r.HandleFunc("/api/pocketws", pocketWs)
+	r.HandleFunc("/api/computerws", computerWs)
 
 	// if page not found, return server error
 	r.NotFoundHandler = http.HandlerFunc(handleServerError)

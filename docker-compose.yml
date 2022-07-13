@@ -8,7 +8,7 @@ volumes:
 
 services:
   ultron-backend:
-    user: "1001:1001"
+    user: "${UID}:${GID}"
     image: cosmtrek/air
     container_name: ultron-backend
     working_dir: /ultron-api/backend

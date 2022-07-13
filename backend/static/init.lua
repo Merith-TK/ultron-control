@@ -1,12 +1,12 @@
 local init = {}
 local cID = os.getComputerID()
-init.url = "http://ultron-backend:3300/"
+init.url = "http://ultron-api:3300/api/"
 init.config = {
-	debug = false,
+	debug = true,
 	ws = {
-		turtle = init.url .. "api/turtle/ws",
-		pocket = init.url .. "api/pocket/ws",
-		computer = init.url .. "api/computer/ws",
+		turtle = init.url .. "turtlews",
+		pocket = init.url .. "pocketws",
+		computer = init.url .. "computerws",
 	},
 	wsHeader = {
 		turtle = {
@@ -24,10 +24,10 @@ init.config = {
 	},
 	api = {
 		current = nil,
-		computer = init.url .. "api/computer/" .. cID.. "/",
-		turtle =   init.url .. "api/turtle/" .. cID.. "/",
-		pocket =   init.url .. "api/pocket/" .. cID.. "/",
-		world  =   init.url .. "api/world/",
+		computer = init.url .. "computer/" .. cID.. "/",
+		turtle =   init.url .. "turtle/" .. cID.. "/",
+		pocket =   init.url .. "pocket/" .. cID.. "/",
+		world  =   init.url .. "world/",
 	},
 	luaUrl = init.url .. "static/",
 	files = {
@@ -134,14 +134,14 @@ local function downloadFiles(files)
  		sleep(init.config.downloadDelay)
  		local url = init.config.luaUrl .. file
 		init.debugPrint(url)
- 		local file = fs.open(file, "w")
+ 		local localfile = fs.open(file, "w")
 		local dl = http.get(url)
  		if dl then
- 			file.write(dl.readAll())
+ 			localfile.write(dl.readAll())
  		else
  			print("[Error]: Unable to download " .. file)
  		end
- 		file.close()
+ 		localfile.close()
  	end
 end
 

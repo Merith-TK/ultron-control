@@ -1,5 +1,5 @@
 default:
-	docker-compose up --remove-orphans
+	UID=${UID} GID=${GID} docker-compose up --remove-orphans
 down:
 	docker-compose down --remove-orphans
 
