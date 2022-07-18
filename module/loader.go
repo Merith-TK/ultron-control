@@ -6,6 +6,7 @@ import (
 	"os"
 	"plugin"
 	"regexp"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -28,7 +29,7 @@ func LoadModules(r *mux.Router, moduleDir string) *mux.Router {
 	}
 	for _, file := range files {
 		// if file is not a .so file, skip it
-		if file.IsDir() {
+		if !strings.HasSuffix(file.Name(), "ult.so") || file.IsDir() {
 			continue
 		}
 		println("Loading module: " + file.Name())
