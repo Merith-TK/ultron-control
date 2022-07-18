@@ -3,6 +3,7 @@ package module
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"plugin"
 	"regexp"
@@ -15,9 +16,9 @@ func LoadModules(r *mux.Router, moduleDir string) *mux.Router {
 	// check for module directory, if not found, create it
 	if _, err := os.Stat(moduleDir); os.IsNotExist(err) {
 		os.Mkdir(moduleDir, 0755)
-		println("Module directory created: " + moduleDir)
+		fmt.Println("Module directory created: " + moduleDir)
 	} else {
-		println("Module directory found: " + moduleDir)
+		fmt.Println("Module directory found: " + moduleDir)
 	}
 
 	// load modules
@@ -32,16 +33,34 @@ func LoadModules(r *mux.Router, moduleDir string) *mux.Router {
 		if !strings.HasSuffix(file.Name(), "ult.so") || file.IsDir() {
 			continue
 		}
-		println("Loading module: " + file.Name())
+		fmt.Println("Loading module: " + file.Name())
 		module, err := plugin.Open(moduleDir + "/" + file.Name())
 		if err != nil {
 			panic(err)
 		}
-		initFunc, err := module.Lookup("Init")
+
+		// get the module name
+		moduleName, err := module.Lookup("Name")
 		if err != nil {
 			panic(err)
 		}
-		initFunc.(func(*mux.Router))(r)
+		name, _ := moduleName.(func() string)
+		moduleVersion, _ := module.Lookup("Version")
+		fmt.Println("[Module] ["+name()+"]", "Version: "+moduleVersion.(func() string)())
+		moduleDesc, _ := module.Lookup("Desc")
+		fmt.Println("[Module] ["+name()+"]", "Description: "+moduleDesc.(func() string)())
+		moduleUsage, _ := module.Lookup("Usage")
+		fmt.Println("[Module] ["+name()+"]", "Usage: "+moduleUsage.(func() string)())
+		moduleInit, _ := module.Lookup("Init")
+		moduleInit.(func())()
+		moduleHandleWs, err := module.Lookup("HandleWs")
+		if err != nil {
+			fmt.Println("Module websocket handler not found")
+		} else {
+			r.HandleFunc("/api/"+name()+"ws", moduleHandleWs.(func(http.ResponseWriter, *http.Request)))
+		}
+		moduleHandle, _ := module.Lookup("Handle")
+		r.HandleFunc("/api/"+name(), moduleHandle.(func(http.ResponseWriter, *http.Request)))
 	}
 	return r
 }
@@ -56,7 +75,7 @@ func listFiles(dir, pattern string) ([]os.FileInfo, error) {
 		if file.IsDir() {
 			continue
 		}
-		println("Found file: " + file.Name())
+		fmt.Println("Found file: " + file.Name())
 		matched, err := regexp.MatchString(pattern, file.Name())
 		if err != nil {
 			return nil, err

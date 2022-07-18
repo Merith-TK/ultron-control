@@ -2,25 +2,24 @@ package main
 
 import (
 	"net/http"
-
-	"github.com/gorilla/mux"
 )
 
-var (
-	// Version is the version of the plugin
-	Version = "0.0.1"
-	// Name is the name of the plugin
-	PackageName = "hello"
-	// Description is a short description of the plugin
-	Description = "A simple plugin that says hello"
-)
-
-func Init(r *mux.Router) *mux.Router {
+// for plugins that dont contain a command to
+// load, all lines marked with //OP are optional
+// if your plugin adds a c ommand, please fille these out
+func Name() string    { return `hello` } //OP
+func Version() string { return `0.0.1` }
+func Usage() string   { return `example` }                //OP
+func Desc() string    { return `description of example` } //OP
+func Init() {
+	// initial setup for the plugin
 	println("Hello from plugins")
-	r.HandleFunc("/api/hello", handleHello)
-	return r
 }
 
-func handleHello(w http.ResponseWriter, r *http.Request) {
+func Handle(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello from plugins"))
+}
+
+func HandleWs(w http.ResponseWriter, r *http.Request) {
+	// unused but you use this for your websockets, which are exposed at `PackageNamews`
 }
