@@ -1,4 +1,4 @@
-ultron-backend
+ultron
 *.exe
 *.so
 vendor/

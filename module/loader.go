@@ -3,7 +3,6 @@ package module
 import (
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"plugin"
 	"regexp"
@@ -33,7 +32,7 @@ func LoadModules(r *mux.Router, moduleDir string) *mux.Router {
 		if !strings.HasSuffix(file.Name(), "ult.so") || file.IsDir() {
 			continue
 		}
-		fmt.Println("Loading module: " + file.Name())
+		fmt.Println("[Module] [Loader] Loading module: " + file.Name())
 		module, err := plugin.Open(moduleDir + "/" + file.Name())
 		if err != nil {
 			panic(err)
@@ -52,15 +51,7 @@ func LoadModules(r *mux.Router, moduleDir string) *mux.Router {
 		moduleUsage, _ := module.Lookup("Usage")
 		fmt.Println("[Module] ["+name()+"]", "Usage: "+moduleUsage.(func() string)())
 		moduleInit, _ := module.Lookup("Init")
-		moduleInit.(func())()
-		moduleHandleWs, err := module.Lookup("HandleWs")
-		if err != nil {
-			fmt.Println("Module websocket handler not found")
-		} else {
-			r.HandleFunc("/api/"+name()+"ws", moduleHandleWs.(func(http.ResponseWriter, *http.Request)))
-		}
-		moduleHandle, _ := module.Lookup("Handle")
-		r.HandleFunc("/api/"+name(), moduleHandle.(func(http.ResponseWriter, *http.Request)))
+		moduleInit.(func(*mux.Router))(r)
 	}
 	return r
 }

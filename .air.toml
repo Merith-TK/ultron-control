@@ -4,7 +4,7 @@ tmp_dir = "tmp"
 
 [build]
   bin = "tmp/main.exe"
-  cmd = "go build -o ./tmp/main.exe ."
+  cmd = "make air-setup"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "static"]
   exclude_file = []

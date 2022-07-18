@@ -7,6 +7,10 @@ down:
 stop: down
 restart: down default
 
+air-setup:
+	go build -buildmode=plugin -o workdir/modules/hello.ult.so module/example/hello.go
+	go build -o tmp/main.exe
+
 pull:
 	git pull
 
