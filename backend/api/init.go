@@ -8,9 +8,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-func CreateApiServer(domain string, port int, luaFiles string) {
+func CreateApiServer(domain string, port int, luaFiles string, moduleDir string) {
 	// // create webserver on port 3300
-	//go func() {
 	r := mux.NewRouter()
 
 	// handle /
@@ -18,6 +17,9 @@ func CreateApiServer(domain string, port int, luaFiles string) {
 		// return all api routes
 		w.Write([]byte("Welcome to the Ultron API!"))
 	})
+
+	// load plugins
+	r = loadModules(r, moduleDir)
 
 	// Serve Turtle Files
 	r.PathPrefix("/api/static/").Handler(http.StripPrefix("/api/static/", http.FileServer(http.Dir(luaFiles))))
@@ -40,7 +42,6 @@ func CreateApiServer(domain string, port int, luaFiles string) {
 	r.HandleFunc("/api", handleGlobalApi)
 
 	r.HandleFunc("/api/turtlews", turtleWs)
-	r.HandleFunc("/api/pocketws", pocketWs)
 	r.HandleFunc("/api/computerws", computerWs)
 
 	// if page not found, return server error

@@ -8,3 +8,5 @@ luafiles = "static"
 
 ## Ultron Data Directory
 ultron_data = "../ultron_data"
+
+module_dir = "../modules"
