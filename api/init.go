@@ -6,6 +6,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+
+	"ultron/module"
 )
 
 func CreateApiServer(domain string, port int, luaFiles string, moduleDir string) {
@@ -19,7 +21,7 @@ func CreateApiServer(domain string, port int, luaFiles string, moduleDir string)
 	})
 
 	// load plugins
-	r = loadModules(r, moduleDir)
+	r = module.LoadModules(r, moduleDir)
 
 	// Serve Turtle Files
 	r.PathPrefix("/api/static/").Handler(http.StripPrefix("/api/static/", http.FileServer(http.Dir(luaFiles))))

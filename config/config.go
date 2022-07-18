@@ -20,18 +20,17 @@ var (
 	config     Config
 	configfile = "config.toml"
 	configtoml = `## Define Host for the API server
-host = "localhost"
-## Define Port for the API server
-port = 3300
-
-## Location for Turtle lua files
-luafiles = "static"
-
-## Ultron Data Directory
-ultron_data = "../ultron_data"
-
-## extra modules
-module_dir = "../modules"
+	host = ""
+	## Define Port for the API server
+	port = 3300
+	
+	## Location for Turtle lua files
+	luafiles = "static"
+	
+	## Ultron Data Directory
+	ultron_data = "workdir/ultron_data"
+	
+	module_dir = "workdir/modules"	
 `
 )
 

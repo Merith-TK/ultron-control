@@ -1,8 +1,8 @@
 package main
 
 import (
-	"backend/api"
-	"backend/config"
+	"ultron/api"
+	"ultron/config"
 )
 
 func main() {

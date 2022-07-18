@@ -1,4 +1,4 @@
-package api
+package module
 
 import (
 	"io/ioutil"
@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func loadModules(r *mux.Router, moduleDir string) *mux.Router {
+func LoadModules(r *mux.Router, moduleDir string) *mux.Router {
 	// check for module directory, if not found, create it
 	if _, err := os.Stat(moduleDir); os.IsNotExist(err) {
 		os.Mkdir(moduleDir, 0755)

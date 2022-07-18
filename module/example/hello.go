@@ -1,9 +1,8 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/gorilla/mux"
+	"net/http"
 )
 
 var (
@@ -15,12 +14,12 @@ var (
 	Description = "A simple plugin that says hello"
 )
 
-func Init(r *mux.Router, w http.ResponseWriter) *mux.Router {
+func Init(r *mux.Router) *mux.Router {
 	println("Hello from plugins")
-	r.HandleFunc("/api/hello", Handle)
+	r.HandleFunc("/api/hello", handleHello)
 	return r
 }
 
-func Handle(w http.ResponseWriter, r *http.Request) {
+func handleHello(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello from plugins"))
 }

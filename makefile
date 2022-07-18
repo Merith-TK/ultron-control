@@ -1,4 +1,5 @@
 default:
+	mkdir -p workdir
 	UID=${UID} GID=${GID} docker-compose up --remove-orphans
 down:
 	docker-compose down --remove-orphans

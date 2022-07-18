@@ -1,7 +1,5 @@
-.docker
-.vscode
-ultron.code-workspace
-ultron_data
-temp/
+ultron-backend
+*.exe
+*.so
+workdir/
 tmp/
-vendor/
