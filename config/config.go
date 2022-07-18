@@ -13,7 +13,6 @@ type Config struct {
 	Port       int    `toml:"port"`
 	LuaFiles   string `toml:"luafiles"`
 	UltronData string `toml:"ultron_data"`
-	ModuleDir  string `toml:"module_dir"`
 }
 
 var (
@@ -28,9 +27,7 @@ var (
 	luafiles = "static"
 	
 	## Ultron Data Directory
-	ultron_data = "workdir/ultron_data"
-	
-	module_dir = "workdir/modules"	
+	ultron_data = "workdir/ultron_data"	
 `
 )
 

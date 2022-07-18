@@ -10,7 +10,7 @@ import (
 	"ultron/module"
 )
 
-func CreateApiServer(domain string, port int, luaFiles string, moduleDir string) {
+func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
 	// // create webserver on port 3300
 	r := mux.NewRouter()
 
@@ -21,7 +21,7 @@ func CreateApiServer(domain string, port int, luaFiles string, moduleDir string)
 	})
 
 	// load plugins
-	r = module.LoadModules(r, moduleDir)
+	r = module.LoadModules(r, dataDir+"/modules")
 
 	// Serve Turtle Files
 	r.PathPrefix("/api/static/").Handler(http.StripPrefix("/api/static/", http.FileServer(http.Dir(luaFiles))))

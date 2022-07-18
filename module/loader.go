@@ -1,6 +1,7 @@
 package module
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"plugin"
@@ -23,7 +24,7 @@ func LoadModules(r *mux.Router, moduleDir string) *mux.Router {
 	if err != nil {
 		panic(err)
 	} else {
-		println("Found " + string(len(files)) + " modules")
+		fmt.Println("Found", len(files), "modules")
 	}
 	for _, file := range files {
 		// if file is not a .so file, skip it
