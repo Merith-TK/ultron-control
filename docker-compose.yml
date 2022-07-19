@@ -8,15 +8,17 @@ volumes:
 
 services:
   ultron-backend:
-    user: "${UID}:${GID}"
     image: cosmtrek/air
     container_name: ultron-backend
-    working_dir: /ultron-api/backend
+    working_dir: /ultron-api
     networks:
       - ultron
     ports:
       - 3300:3300
     volumes:
       - ./:/ultron-api/
-      - ./.docker/.cache:/.cache
+      - air_cache:/.cache
+    environment:
+      UID: ${USER}
+      GID: ${USER}
       

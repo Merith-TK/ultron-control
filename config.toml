@@ -7,4 +7,4 @@ port = 3300
 luafiles = "static"
 
 ## Ultron Data Directory
-ultron_data = "../ultron_data"
+ultron_data = "workdir"
