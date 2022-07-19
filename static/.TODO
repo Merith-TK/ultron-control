@@ -1,7 +1,0 @@
-[ ] make turtle api injector to enforce skyrtle.hijack()
-
-[ ] create control frontend for turtle
-
-[ ] create control backend and frontend for computer
-
-[ ] make turtle save cmdQueue to file for persistance should websocket loose connection
