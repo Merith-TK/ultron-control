@@ -6,11 +6,12 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+
+	"ultron/module"
 )
 
-func CreateApiServer(domain string, port int, luaFiles string) {
+func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
 	// // create webserver on port 3300
-	//go func() {
 	r := mux.NewRouter()
 
 	// handle /
@@ -19,6 +20,9 @@ func CreateApiServer(domain string, port int, luaFiles string) {
 		w.Write([]byte("Welcome to the Ultron API!"))
 	})
 
+	// load plugins
+	r = module.LoadModules(r, dataDir+"/modules")
+
 	// Serve Turtle Files
 	r.PathPrefix("/api/static/").Handler(http.StripPrefix("/api/static/", http.FileServer(http.Dir(luaFiles))))
 
@@ -26,10 +30,6 @@ func CreateApiServer(domain string, port int, luaFiles string) {
 	r.HandleFunc("/api/computer", handleComputerApi).Methods("GET", "POST")
 	r.HandleFunc("/api/computer/{id}", handleComputerApi).Methods("GET", "POST")
 
-	//create api for /api/turtle with argument for id
-	r.HandleFunc("/api/turtle", handleTurtleApi)
-	r.HandleFunc("/api/turtle/{id}", handleTurtleApi)
-	r.HandleFunc("/api/turtle/{id}/{action}", handleTurtleApi)
 
 	// todo: create api for /api/world
 	//create api for /api/world
@@ -40,7 +40,6 @@ func CreateApiServer(domain string, port int, luaFiles string) {
 	r.HandleFunc("/api", handleGlobalApi)
 
 	r.HandleFunc("/api/turtlews", turtleWs)
-	r.HandleFunc("/api/pocketws", pocketWs)
 	r.HandleFunc("/api/computerws", computerWs)
 
 	// if page not found, return server error
