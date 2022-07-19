@@ -7,23 +7,29 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"gitlab.com/merith-tk/ultron/api"
+	"github.com/gorilla/websocket"
 )
 
-
-func Name() string    { return `heyo` } //OP
-func Version() string { return `0.0.1` }
-func Desc() string    { return `description of example` } //OP 
-func Usage() string   { return `usage of example` }
-
-func Exposes() []string {
-	var exposes []string
-	exposes = append(exposes, "api/heyo")
-	exposes = append(exposes, "api/heyo/ws")
-	return exposes 
+func Name() string    { return `turtle` } //OP
+func Version() string { return `0.1.0` }
+func Desc() string    { return `The Base turtle control API` } //OP
+func Usage() string {
+	return `
+/api/turtle
+	GET: Returns data of all turtles
+/api/turtle/<ID>
+	TIP: use ID "debug" to see the structure of the json
+	GET: Returns data of single turtle
+	POST: Send command to turtle
+		EX: JSON ["print('Hello from Ultron')"] will print to turtle display
+/api/turtle/ws
+	This is the websocket for turtles, please do not attempt to use
+`
 }
-func Init(m *mux.Router) { 
+
+func Init(m *mux.Router) {
 	//create api for /api/turtle with argument for id
+	m.HandleFunc("/api/turtle/ws", HandleWs)
 	m.HandleFunc("/api/turtle", Handle)
 	m.HandleFunc("/api/turtle/{id}", Handle)
 	m.HandleFunc("/api/turtle/{id}/{action}", Handle)
@@ -61,6 +67,10 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 
 	if id == "ws" {
 		HandleWs(w, r)
+		return
+	}
+	if id == "usage" {
+		w.Write([]byte(Usage()))
 		return
 	}
 
@@ -238,4 +248,12 @@ func HandleWs(w http.ResponseWriter, r *http.Request) {
 			currentTurtle.CmdQueue = []string{}
 		}
 	}
+}
+
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+func returnError(w http.ResponseWriter, code int, message string) {
+	w.Write([]byte("{ \"error\": { \"code\":" + strconv.Itoa(code) + ", \"message\": \"" + message + "\" } }"))
 }

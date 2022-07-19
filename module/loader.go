@@ -13,7 +13,6 @@ import (
 
 var ModuleList []Module
 
-
 func LoadModules(r *mux.Router, moduleDir string) *mux.Router {
 	// check for module directory, if not found, create it
 	if _, err := os.Stat(moduleDir); os.IsNotExist(err) {
@@ -50,18 +49,18 @@ func LoadModules(r *mux.Router, moduleDir string) *mux.Router {
 		name, _ := moduleName.(func() string)
 		moduleVersion, _ := module.Lookup("Version")
 		//moduleDesc, _ := module.Lookup("Desc")
-		moduleUsage, _ := module.Lookup("Usage")
+		moduleDesc, _ := module.Lookup("Desc")
 		moduleInit, _ := module.Lookup("Init")
 		moduleInit.(func(*mux.Router))(r)
-		
+
 		thisModule.Name = name()
 		thisModule.Version = moduleVersion.(func() string)()
-		thisModule.Usage = moduleUsage.(func() string)()
+		thisModule.Desc = moduleDesc.(func() string)()
 
 		// print module info
 		fmt.Println("[Module] [Loader] Module loaded: " + thisModule.Name)
 		fmt.Println("[Module] [Loader] Module version: " + thisModule.Version)
-	
+
 		ModuleList = append(ModuleList, thisModule)
 	}
 	// Print Modules

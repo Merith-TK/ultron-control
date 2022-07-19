@@ -4,17 +4,12 @@ init.url = "http://ultron-api:3300/api/"
 init.config = {
 	debug = true,
 	ws = {
-		turtle = init.url .. "turtlews",
-		pocket = init.url .. "pocketws",
-		computer = init.url .. "computerws",
+		turtle = init.url .. "turtle/ws",
+		computer = init.url .. "computer/ws",
 	},
 	wsHeader = {
 		turtle = {
 			"turtle",
-			tostring(cID),
-		},
-		pocket = {
-			"pocket",
 			tostring(cID),
 		},
 		computer = {
@@ -26,8 +21,6 @@ init.config = {
 		current = nil,
 		computer = init.url .. "computer/" .. cID.. "/",
 		turtle =   init.url .. "turtle/" .. cID.. "/",
-		pocket =   init.url .. "pocket/" .. cID.. "/",
-		world  =   init.url .. "world/",
 	},
 	luaUrl = init.url .. "static/",
 	files = {
@@ -42,9 +35,6 @@ init.config = {
 			"turtle/skyrtle.lua",
 			"turtle/Terminal.lua",
 			"world-post.lua",
-		},
-		pocket = {
-			"pocket/Terminal.lua",
 		},
 
 	},
@@ -83,19 +73,6 @@ init.turtleData = {
 init.computerData = {
 	name = "",
 	id = 0,
-	cmdResult = {},
-	cmdQueue = {},
-	miscData = {},
-}
-init.pocketData = {
-	name = "",
-	id = 0,
-	pos = {
-		x = 0,
-		y = 0,
-		z = 0,
-		r = 0,
-	},
 	cmdResult = {},
 	cmdQueue = {},
 	miscData = {},

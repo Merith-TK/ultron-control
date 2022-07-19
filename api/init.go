@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -22,25 +23,20 @@ func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
 
 	// load plugins
 	r = module.LoadModules(r, dataDir+"/modules")
+	r.HandleFunc("/api/modules", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(module.ModuleList)
+	})
 
 	// Serve Turtle Files
 	r.PathPrefix("/api/static/").Handler(http.StripPrefix("/api/static/", http.FileServer(http.Dir(luaFiles))))
 
 	// handle /api/computer
+	r.HandleFunc("/api/computer/ws", computerWs)
 	r.HandleFunc("/api/computer", handleComputerApi).Methods("GET", "POST")
 	r.HandleFunc("/api/computer/{id}", handleComputerApi).Methods("GET", "POST")
 
-
-	// todo: create api for /api/world
-	//create api for /api/world
-	r.HandleFunc("/api/world", handleWorldApi)
-
-	// todo: make global api more than placeholder
 	//handle global api on /api/v1
 	r.HandleFunc("/api", handleGlobalApi)
-
-	r.HandleFunc("/api/turtlews", turtleWs)
-	r.HandleFunc("/api/computerws", computerWs)
 
 	// if page not found, return server error
 	r.NotFoundHandler = http.HandlerFunc(handleServerError)
