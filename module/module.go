@@ -5,6 +5,5 @@ type Module struct {
 	Name        string
 	Version     string
 	Usage       string
-	Description string
-	Init        func()
+	Exposes string
 }

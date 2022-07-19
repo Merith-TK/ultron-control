@@ -11,6 +11,9 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var ModuleList []Module
+
+
 func LoadModules(r *mux.Router, moduleDir string) *mux.Router {
 	// check for module directory, if not found, create it
 	if _, err := os.Stat(moduleDir); os.IsNotExist(err) {
@@ -28,6 +31,7 @@ func LoadModules(r *mux.Router, moduleDir string) *mux.Router {
 		fmt.Println("Found", len(files), "modules")
 	}
 	for _, file := range files {
+		var thisModule Module
 		// if file is not a .so file, skip it
 		if !strings.HasSuffix(file.Name(), "ult.so") || file.IsDir() {
 			continue
@@ -45,13 +49,25 @@ func LoadModules(r *mux.Router, moduleDir string) *mux.Router {
 		}
 		name, _ := moduleName.(func() string)
 		moduleVersion, _ := module.Lookup("Version")
-		fmt.Println("[Module] ["+name()+"]", "Version: "+moduleVersion.(func() string)())
-		moduleDesc, _ := module.Lookup("Desc")
-		fmt.Println("[Module] ["+name()+"]", "Description: "+moduleDesc.(func() string)())
+		//moduleDesc, _ := module.Lookup("Desc")
 		moduleUsage, _ := module.Lookup("Usage")
-		fmt.Println("[Module] ["+name()+"]", "Usage: "+moduleUsage.(func() string)())
 		moduleInit, _ := module.Lookup("Init")
 		moduleInit.(func(*mux.Router))(r)
+		
+		thisModule.Name = name()
+		thisModule.Version = moduleVersion.(func() string)()
+		thisModule.Usage = moduleUsage.(func() string)()
+
+		// print module info
+		fmt.Println("[Module] [Loader] Module loaded: " + thisModule.Name)
+		fmt.Println("[Module] [Loader] Module version: " + thisModule.Version)
+	
+		ModuleList = append(ModuleList, thisModule)
+	}
+	// Print Modules
+	fmt.Println("[Module] [Loader] Loaded modules:")
+	for _, module := range ModuleList {
+		fmt.Println("[Module] [Loader] - [", module.Version, "]", module.Name)
 	}
 	return r
 }

@@ -30,10 +30,6 @@ func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
 	r.HandleFunc("/api/computer", handleComputerApi).Methods("GET", "POST")
 	r.HandleFunc("/api/computer/{id}", handleComputerApi).Methods("GET", "POST")
 
-	//create api for /api/turtle with argument for id
-	r.HandleFunc("/api/turtle", handleTurtleApi)
-	r.HandleFunc("/api/turtle/{id}", handleTurtleApi)
-	r.HandleFunc("/api/turtle/{id}/{action}", handleTurtleApi)
 
 	// todo: create api for /api/world
 	//create api for /api/world

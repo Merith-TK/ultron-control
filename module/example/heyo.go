@@ -10,27 +10,27 @@ import (
 // for plugins that dont contain a command to
 // load, all lines marked with //OP are optional
 // if your plugin adds a c ommand, please fille these out
-func Name() string    { return `hello` } //OP
+func Name() string    { return `heyo` } //OP 
 func Version() string { return `0.0.1` }
 func Desc() string    { return `description of example` } //OP 
 func Usage() string   { return `usage of example` }
 
 func Exposes() []string {
 	var exposes []string
-	exposes = append(exposes, "api/hello")
-	exposes = append(exposes, "api/hello/ws")
+	exposes = append(exposes, "api/heyo")
+	exposes = append(exposes, "api/heyo/ws")
 	return exposes 
 }
-func Init(m *mux.Router) {
+func Init(m *mux.Router) { 
 	// initial setup for the plugin
-	println("Hello from plugins")
-	m.HandleFunc("/api/hello/ws", HandleWs)
-	m.HandleFunc("/api/hello", Handle)
+	println("heyo from plugins")
+	m.HandleFunc("/api/heyo/ws", HandleWs)
+	m.HandleFunc("/api/heyo", Handle)
 }
 
 func Handle(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		w.Write([]byte("Hello from plugins"))
+		w.Write([]byte("heyo from plugins"))
 	} else if r.Method == "POST" {
 		// print post data
 		fmt.Println(r.Form)
