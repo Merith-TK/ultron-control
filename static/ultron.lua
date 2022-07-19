@@ -209,7 +209,7 @@ end
 --------------------------------------------------------------------------------
 function ultron.download_module(moduleName)
 		-- download files using http
-		local file = "/module.lua"
+		local file = "module.lua"
 		ultron.debugPrint("Downloading Module: " .. moduleName)
  		local url = ultron.config.api.host .. "/" .. moduleName .. "/fs/" .. file
 		ultron.debugPrint(url)
@@ -223,45 +223,25 @@ function ultron.download_module(moduleName)
  		localfile.close()
 
 end
-if shell.getRunningProgram() == "rom/programs/http/wget.lua" then
-	if not fs.exists("cfg/module") then
-		print("Which module do you want to use?")
-		for i, module in ipairs(ultron.modules) do
-			print(i .. ": " .. module.Name)
-		end
-		local choice = tonumber(read())
-		-- check if choice is valid
-		if choice and choice > 0 and choice <= #ultron.modules then
-			local module = ultron.modules[choice]
-			ultron.download_module(module.Name)
-		end
-		if not fs.exists("cfg") then
-			fs.makeDir("cfg")
-		end
-		local cfg = fs.open("cfg/module", "w")
-		cfg.write(ultron.modules[choice].Name)
-		cfg.close()
-	else
-		local cfg = fs.open("cfg/module", "r")
-		local module = cfg.readAll()
-		ultron.module = module
-		ultron.config.api.ws = ultron.config.api.host .. "/" .. module .. "/ws"
-		ultron.download_module(module)
-		cfg.close()
-	end
-	if not fs.exists("ultron.lua") then
-		-- download ultron.lua from apu/static/ultron.lua
-		local url = ultron.config.api.host .. "/static/ultron.lua"
-		ultron.debugPrint(url)
-		local localfile = fs.open("ultron.lua", "w")
-		local dl = http.get(url)
-		if dl then
-			localfile.write(dl.readAll())
+function ultron.wget(file, url)
+	local localfile = fs.open(file, "w")
+	local dl = http.get(url)
+	if dl then
+		local data = dl.readAll()
+		if data ~= "" then
+			localfile.write(data)
 		else
-			print("[Error]: Unable to download ultron.lua")
-			error("Unable to download ultron.lua")
+			print("[Err] Could not download '".. file.. "' recieved No Data")
 		end
+	else
+		print("[Error]: Unable to download "..file)
 	end
+	localfile.close()
+	dl.close()
+end
+if shell.getRunningProgram() == "rom/programs/http/wget.lua" then
+	ultron.wget("startup.lua", ultron.config.api.host .. "/static/startup.lua")
+	ultron.wget("ultron.lua", ultron.config.api.host .. "/static/ultron.lua")
 end
 
 
