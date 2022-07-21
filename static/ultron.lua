@@ -5,8 +5,7 @@ ultron.config = {
 	debug = true,
 	version = "0.0.1",
 	api = {
-		--host = "http://ultron-api:3300/api",
-		host = "https://3300-merithtk-ultroncontrol-2hqr82hg1bo.ws-us54.gitpod.io/api",
+		host = "http://ultron-api:3300/api",
 		delay = 0.5,
 		timeout = 5,
 		retries = 3,
@@ -49,8 +48,8 @@ ultron.get_modules()
 
 -- open websocket
 ultron.websocket = {}
+local wsError = false
 local function openWebsocket(url)
-	ultron.debugPrint("Opening websocket connection ".. ultron.config.api.ws)
 	if not url then
 		url = ultron.config.api.ws
 	end
@@ -58,6 +57,7 @@ local function openWebsocket(url)
 	if ws then
 		ultron.websocket = ws
 		ultron.debugPrint("Websocket opened")
+		wsError = false
 		return true
 	else
 		return false
@@ -66,19 +66,29 @@ end
 
 local function websocketError(data)
 	-- attempt to reconnect to websocket
-	if data then
-		ultron.debugPrint("Websocket error: " .. data)
-	else
-		ultron.debugPrint("Websocket error not sent")
+	if not wsError then
+		wsError = true
+		if data then
+			ultron.debugPrint("Websocket error: " .. data)
+		else
+			ultron.debugPrint("Websocket error")
+		end
+		ultron.debugPrint("Attempting to reconnect to websocket")
+		if openWebsocket() then
+			wsError = false
+			ultron.debugPrint("Websocket reconnected")
+		end
 	end
-	ultron.debugPrint("Attempting to reconnect...")
+	--ultron.debugPrint("Attempting to reconnect...")
 	sleep(ultron.config.apiDelay)
 	openWebsocket()
 end
 
 function ultron.ws(connectionType, data)
 	if connectionType == "open" then
-		openWebsocket(data)
+		if not openWebsocket(data) then
+			websocketError()
+		end
 	elseif connectionType == "send" then
 		local err, result = pcall(ultron.websocket.send, data)
 		if not err then websocketError(result) end
@@ -86,8 +96,10 @@ function ultron.ws(connectionType, data)
 	elseif connectionType == "receive" then
 		local err, result = pcall(ultron.websocket.receive, 1)
 		if not err then websocketError(result) end
-		ultron.debugPrint("Websocket received: " .. result)
-		return result
+		if result then
+			ultron.debugPrint("Websocket received: " .. result)
+			return result
+		else return nil end
 	elseif type == "close" then
 		local err, result = pcall(ultron.websocket.close)
 		if not err then websocketError(result) end
@@ -129,11 +141,31 @@ function ultron.saveCommandQueue()
 	end
 end
 
+
+
+--------------------------------------------------------------------------------
+-- processCmd(cmd)
+-- Processes a single command
+function ultron.processCmd(cmd)
+	if not cmd then
+		return false, "No command given"
+	end
+	local cmdExec, err = load(cmd, nil, "t", _ENV)
+	if cmdExec then
+		print("[cmd:in] = " .. cmd)
+		local result = {pcall(cmdExec)}
+		cmdResult = result
+		if result then
+			result = textutils.serialize(cmdResult)
+		end
+		print("[cmd:out] = " .. tostring(result))
+	end
+end
 --------------------------------------------------------------------------------
 -- processQueue(queue)
 -- Processes the queue
-
 function ultron.processCmdQueue(cmdQueue)
+	ultron.data.cmdQueue = cmdQueue
 	while true do
 		-- check if cmdQueue is empty
 		if #ultron.data.cmdQueue ~= 0 then
@@ -144,22 +176,12 @@ function ultron.processCmdQueue(cmdQueue)
 				file.write(textutils.serializeJSON(ultron.data.cmdQueue))
 				file.close()
 				if cmd then
-					local cmdExec, err = loadstring(cmd)
-					if cmdExec then
-						print("[cmd:in] = " .. cmd)
-						setfenv(cmdExec, getfenv())
-						local result = {pcall(cmdExec)}
-						cmdResult = result
-						if result then
-							result = textutils.serialize(cmdResult)
-						end
-						print("[cmd:out] = " .. tostring(result))
-						ultron.data.cmdResult = cmdResult
-					-- else
-					-- 	cmdResult = {}
+					ultron.debugPrint("Processing cmd: " .. cmd)
+					cmdResult = ultron.processCmd(cmd)
+					if cmdResult then
+						ultron.debugPrint("cmdResult: " .. cmdResult)
 					end
 				end
-				--ultron.data.cmdResult = cmdResult
 			end
 		else
 			sleep()
@@ -172,25 +194,40 @@ end
 -- Waits for orders from the websocket
 function ultron.recieveOrders()
 	while true do
-		ultron.debugPrint("Waiting for orders")
-		local event, url, data = os.pullEvent("websocket_message")
-		if data then
-			ultron.debugPrint("Order Recieved: " .. data)
-			data = textutils.unserializeJSON(data)
-			-- append data table contents to ultron.data.cmdQueue
-			for i = 1, #data do
-				if data[i] == "ultron.break()" then
-					ultron.data.cmdQueue = {}
-					ultron.saveCommandQueue()
-					
-					os.reboot()
+		sleep()
+		if not wsError then
+			local data = ultron.ws("receive")
+			if data then
+				local data = textutils.unserializeJSON(data)
+				if data then
+					ultron.debugPrint("Received orders: " .. textutils.serialize(data))
+					if data.type == "orders" then
+						ultron.data.orders = data.orders
+						ultron.debugPrint("Orders: " .. textutils.serialize(ultron.data.orders))
+						ultron.saveOrders()
+					end
 				end
-				table.insert(ultron.data.cmdQueue, data[i])
 			end
-			ultron.debugPrint("cmdQueue: " .. textutils.serialize(ultron.data.cmdQueue))
-		else
-			ultron.debugPrint("No data recieved")
 		end
+		-- ultron.debugPrint("Waiting for orders")
+		-- local event, url, data = os.pullEvent("websocket_message")
+		-- if data then
+		-- 	ultron.debugPrint("Order Recieved: " .. data)
+		-- 	data = textutils.unserializeJSON(data)
+		-- 	-- append data table contents to ultron.data.cmdQueue
+		-- 	for i = 1, #data do
+		-- 		if data[i] == "ultron.break()" then
+		-- 			ultron.data.cmdQueue = {}
+		-- 			ultron.saveCommandQueue()
+					
+		-- 			os.reboot()
+		-- 		end
+		-- 		table.insert(ultron.data.cmdQueue, data[i])
+		-- 	end
+		-- 	ultron.debugPrint("cmdQueue: " .. textutils.serialize(ultron.data.cmdQueue))
+		-- else
+		-- 	ultron.debugPrint("No data recieved")
+		-- end
 	end
 end
 
@@ -221,8 +258,8 @@ function ultron.download_module(moduleName)
  			print("[Error]: Unable to download " .. file)
  		end
  		localfile.close()
-
 end
+
 function ultron.wget(file, url)
 	local localfile = fs.open(file, "w")
 	local dl = http.get(url)

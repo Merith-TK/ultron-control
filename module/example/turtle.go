@@ -54,7 +54,6 @@ type Turtle struct {
 		Current int `json:"current"`
 		Max     int `json:"max"`
 	} `json:"fuel"`
-
 	CmdResult []interface{} `json:"cmdResult"`
 	CmdQueue  []string      `json:"cmdQueue"`
 	MiscData  []interface{} `json:"miscData"`
@@ -282,21 +281,20 @@ func HandleFs(w http.ResponseWriter, r *http.Request) {
 			end
 			localfile.close()
 		end
-			
+
 		_G.skyrtle = require("skyrtle")
-		
+
 		skyrtle.hijack()
-		
+
 		ultron.config.api.ws = ultron.config.api.host:gsub("http", "ws") .. "/turtle/ws"
 		ultron.ws("open", ultron.config.api.ws)
 		ultron.debugPrint()
-		
-		
+
 		ultron.debugPrint("ApiDelay: " .. ultron.config.api.delay)
-		ultron.debugPrint("Websocket URL: " .. ultron.config.api.ws)
-		ultron.debugPrint("Websocket Header: " .. textutils.serialize(wsHeader))
-		
-		
+		ultron.debugPrint("Websocket URL: " .. "\n" ..ultron.config.api.ws)
+		--ultron.debugPrint("Websocket Header: " .. textutils.serialize(wsHeader))
+
+
 		ultron.data = {
 			name = "",
 			id = 0,
@@ -352,7 +350,7 @@ func HandleFs(w http.ResponseWriter, r *http.Request) {
 				end
 			end
 			turtle.select(ultron.data.selectedSlot)
-		
+
 			local TurtleData =  textutils.serializeJSON(ultron.data)
 			ultron.ws("send",TurtleData)
 		end
