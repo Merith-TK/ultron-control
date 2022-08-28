@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"ultron/api"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -97,58 +98,58 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// http://localhost:3300/api/turtle/1
-
 	if r.Method == "GET" {
 		// return turtle data on /api/turtle/{id}
 		if id == "" {
 			// if Turtles is empty
 			if len(Turtles) == 0 {
 				// returnError no Turtles found as json with status code 503
-				returnError(w, http.StatusServiceUnavailable, "No Turtles found")
+				api.ReturnError(w, http.StatusServiceUnavailable, "No Turtles found")
 				return
 			} else {
 				//return all turtle data
-				json.NewEncoder(w).Encode(Turtles)
+				//api.ReturnData(w, Turtles)
+				api.ReturnData(w, Turtles)
 			}
 
 		} else if id != "" {
 			if !found {
-				returnError(w, http.StatusServiceUnavailable, "Turtle has not been added yet")
+				api.ReturnError(w, http.StatusServiceUnavailable, "Turtle has not been added yet")
 				return
 			}
 			// make switch for action
 			switch action {
 			case "":
 				// return turtle data
-				json.NewEncoder(w).Encode(currentTurtle)
+				api.ReturnData(w, currentTurtle)
 			case "name":
 				// return turtle name
-				json.NewEncoder(w).Encode(currentTurtle.Name)
+				api.ReturnData(w, currentTurtle.Name)
 			case "fuel":
 				// return turtle fuel
-				json.NewEncoder(w).Encode(currentTurtle.Fuel)
+				api.ReturnData(w, currentTurtle.Fuel)
 			case "misc":
 				// return turtle misc
-				json.NewEncoder(w).Encode(currentTurtle.MiscData)
+				api.ReturnData(w, currentTurtle.MiscData)
 			case "inventory":
 				// return turtle inventory
-				json.NewEncoder(w).Encode(currentTurtle.Inventory)
+				api.ReturnData(w, currentTurtle.Inventory)
 			case "selectedSlot":
 				// return turtle selected slot
-				json.NewEncoder(w).Encode(currentTurtle.SelectedSlot)
+				api.ReturnData(w, currentTurtle.SelectedSlot)
 			case "pos":
 				//return turtle position
-				json.NewEncoder(w).Encode(currentTurtle.Pos)
+				api.ReturnData(w, currentTurtle.Pos)
 			case "cmdQueue":
 				// return turtle cmdQueue
-				json.NewEncoder(w).Encode(currentTurtle.CmdQueue)
+				api.ReturnData(w, currentTurtle.CmdQueue)
 			case "cmdResult":
 				// return turtle cmdResult
-				json.NewEncoder(w).Encode(currentTurtle.CmdResult)
+				api.ReturnData(w, currentTurtle.CmdResult)
 				// print turtle cmdResult
 				log.Println("[Turtle]", currentTurtle.Name, ":", currentTurtle.CmdResult)
 			default:
-				returnError(w, http.StatusBadRequest, "Invalid action: "+action)
+				api.ReturnError(w, http.StatusBadRequest, "Invalid action: "+action)
 			}
 		}
 	} else if r.Method == "POST" {
@@ -252,8 +253,4 @@ func HandleWs(w http.ResponseWriter, r *http.Request) {
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
-}
-
-func returnError(w http.ResponseWriter, code int, message string) {
-	w.Write([]byte("{ \"error\": { \"code\":" + strconv.Itoa(code) + ", \"message\": \"" + message + "\" } }"))
 }

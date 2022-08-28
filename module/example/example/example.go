@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"ultron/api"
 
 	"github.com/gorilla/mux"
 )
@@ -35,7 +36,8 @@ func Init(m *mux.Router) {
 
 func Handle(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		w.Write([]byte("Hello from plugins"))
+		api.ReturnData(w, map[string]string{"hello": "This is an example", "notice": "This is a notice"})
+
 	} else if r.Method == "POST" {
 		// print post data
 		fmt.Println(r.Form)
