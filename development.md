@@ -9,4 +9,4 @@ turtle uses skyrtle for movement
 ## deb shit
 
 test cmd api with
-`curl -X POST -H "Content-Type: application/json"  --data-binary '["return turtle.turnLeft()"]' http://localhost:3300/api/v1/turtle/1`
+`curl -X POST -H "Content-Type: application/json"  --data-binary '["return turtle.turnLeft()"]' http://localhost:3300/api/turtle/1`

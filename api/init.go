@@ -14,6 +14,7 @@ import (
 func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
 	// // create webserver on port 3300
 	r := mux.NewRouter()
+	r.Headers("Content-Type", "application/json")
 
 	// handle /
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -39,20 +40,29 @@ func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
 	r.HandleFunc("/api", handleGlobalApi)
 
 	// if page not found, return server error
-	r.NotFoundHandler = http.HandlerFunc(handleServerError)
+	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ReturnError(w, http.StatusNotImplemented, "Server Error: Check for trailing / in url, or verify against documentation of API")
+	})
 
 	// start webserver on config.Port
 	portstr := strconv.Itoa(port)
 	http.ListenAndServe(domain+":"+portstr, r)
 }
 
-// make function to handle server errors
-func handleServerError(w http.ResponseWriter, r *http.Request) {
-	returnError(w, http.StatusNotImplemented, "Server Error: Check for trailing / in url, or verify against documentation of API")
+func notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	ReturnError(w, http.StatusNotImplemented, "Server Error: Check for trailing / in url, or verify against documentation of API")
 }
 
-func returnError(w http.ResponseWriter, code int, message string) {
+// ReturnError returns an error to the client with the specified status code and message
+func ReturnError(w http.ResponseWriter, code int, message string) {
+	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte("{ \"error\": { \"code\":" + strconv.Itoa(code) + ", \"message\": \"" + message + "\" } }"))
+}
+
+// ReturnData returns data as json to the client
+func ReturnData(w http.ResponseWriter, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
 }
 
 var upgrader = websocket.Upgrader{
