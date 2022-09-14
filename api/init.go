@@ -25,7 +25,7 @@ func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
 	// load plugins
 	r = module.LoadModules(r, dataDir+"/modules")
 	r.HandleFunc("/api/modules", func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(module.ModuleList)
+		ReturnData(w, module.ModuleList)
 	})
 
 	// Serve Turtle Files
@@ -56,7 +56,7 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 // ReturnError returns an error to the client with the specified status code and message
 func ReturnError(w http.ResponseWriter, code int, message string) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte("{ \"error\": { \"code\":" + strconv.Itoa(code) + ", \"message\": \"" + message + "\" } }"))
+	ReturnData(w, map[string]interface{}{"error": map[string]interface{}{"code": strconv.Itoa(code), "message": message}})
 }
 
 // ReturnData returns data as json to the client

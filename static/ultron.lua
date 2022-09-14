@@ -5,7 +5,7 @@ ultron.config = {
 	debug = true,
 	version = "0.0.1",
 	api = {
-		host = "http://ultron-api:3300/api",
+		host = "http://localhost:3300/api",
 		delay = 0.5,
 		timeout = 5,
 		retries = 3,
@@ -262,19 +262,35 @@ end
 
 function ultron.wget(file, url)
 	local localfile = fs.open(file, "w")
+	if fs.exists(file) then
+		fs.copy(file, file .. ".bak")
+	end
 	local dl = http.get(url)
+	local didError = false
 	if dl then
 		local data = dl.readAll()
 		if data ~= "" then
 			localfile.write(data)
 		else
 			print("[Err] Could not download '".. file.. "' recieved No Data")
+			didError = true
 		end
 	else
 		print("[Error]: Unable to download "..file)
+		didError = true
 	end
 	localfile.close()
 	dl.close()
+	if didError then
+		if fs.exists(file .. ".bak") then
+			fs.delete(file)
+			fs.move(file .. ".bak", file)
+		end
+	else
+		if fs.exists(file .. ".bak") then
+			fs.delete(file .. ".bak")
+		end
+	end
 end
 if shell.getRunningProgram() == "rom/programs/http/wget.lua" then
 	ultron.wget("startup.lua", ultron.config.api.host .. "/static/startup.lua")

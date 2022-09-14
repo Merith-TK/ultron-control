@@ -42,7 +42,7 @@ func handleComputerApi(w http.ResponseWriter, r *http.Request) {
 
 	// return computer data if request is GET
 	if r.Method == "GET" {
-		//json.NewEncoder(w).Encode(computers)
+		//api.ReturnData(w, computers)
 		ReturnData(w, computers)
 	} else if r.Method == "POST" {
 		// r.Body should be a json string

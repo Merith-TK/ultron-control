@@ -30,7 +30,8 @@ func Usage() string {
 
 func Init(m *mux.Router) {
 	//create api for /api/turtle with argument for id
-	m.HandleFunc("/api/turtle/ws", HandleWs)
+	m.HandleFunc("/api/turtle/fs", HandleFs)
+	m.HandleFunc("/api/turtle/fs/{file}", HandleFs)
 	m.HandleFunc("/api/turtle", Handle)
 	m.HandleFunc("/api/turtle/{id}", Handle)
 	m.HandleFunc("/api/turtle/{id}/{action}", Handle)
@@ -54,7 +55,6 @@ type Turtle struct {
 		Current int `json:"current"`
 		Max     int `json:"max"`
 	} `json:"fuel"`
-
 	CmdResult []interface{} `json:"cmdResult"`
 	CmdQueue  []string      `json:"cmdQueue"`
 	MiscData  []interface{} `json:"miscData"`
@@ -72,6 +72,10 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	if id == "usage" {
 		w.Write([]byte(Usage()))
+		return
+	}
+	if id == "fs" {
+		HandleFs(w, r)
 		return
 	}
 
@@ -98,6 +102,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// http://localhost:3300/api/turtle/1
+
 	if r.Method == "GET" {
 		// return turtle data on /api/turtle/{id}
 		if id == "" {
@@ -108,7 +113,6 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 				return
 			} else {
 				//return all turtle data
-				//api.ReturnData(w, Turtles)
 				api.ReturnData(w, Turtles)
 			}
 
@@ -171,7 +175,6 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 // handle turtle websocket
 func HandleWs(w http.ResponseWriter, r *http.Request) {
 	// message should come in as json
-
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Print("upgrade:", err)
@@ -253,4 +256,149 @@ func HandleWs(w http.ResponseWriter, r *http.Request) {
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
+}
+
+func HandleFs(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	file := vars["file"]
+	log.Println("[File] Serving file:", file)
+	if file == "module.lua" {
+		w.Write([]byte(`
+local ultron = require("ultron")
+assert(ultron)
+		
+if not fs.exists("/skyrtle.lua") then
+	local localfile = fs.open("skyrtle.lua", "w")
+	local dl = http.get("https://raw.githubusercontent.com/SkyTheCodeMaster/SkyDocs/main/src/main/misc/skyrtle.lua")
+	if dl then
+		localfile.write(dl.readAll())
+	else
+		print("[Error]: Unable to download " .. "skyrtle.lua")
+	end
+	localfile.close()
+end
+
+_G.skyrtle = require("skyrtle")
+skyrtle.hijack()
+
+ultron.config.api.ws = ultron.config.api.host:gsub("http", "ws") .. "/turtle/ws"
+ultron.ws("open", ultron.config.api.ws)
+ultron.debugPrint()
+
+ultron.debugPrint("ApiDelay: " .. ultron.config.api.delay)
+ultron.debugPrint("Websocket URL: " .. "\n" ..ultron.config.api.ws)
+--ultron.debugPrint("Websocket Header: " .. textutils.serialize(wsHeader))
+
+ultron.data = {
+	name = "",
+	id = 0,
+	pos = {
+		x = 0,
+		y = 0,
+		z = 0,
+		r = 0,
+		rname = "",
+	},
+	fuel = {
+		current = 0,
+		max = 0,
+	},
+	selectedSlot = 0,
+	inventory = {},
+	cmdResult = {},
+	cmdQueue = {},
+	miscData = {},
+}
+
+		
+-- function to send turtle data to websocket
+local function updateControl()
+	ultron.data.id = os.getComputerID()
+	local label = os.getComputerLabel()
+	if label and not label == "" then
+		ultron.data.name = label
+	else
+		os.setComputerLabel(tostring(ultron.data.id))
+		ultron.data.name = tostring(ultron.data.id)
+	end
+
+	local x,y,z = skyrtle.getPosition()
+	local r, rname = skyrtle.getFacing()
+	ultron.data.pos.x = x
+	ultron.data.pos.y = y
+	ultron.data.pos.z = z
+	ultron.data.pos.r = r
+	ultron.data.pos.rname = rname
+		
+	ultron.data.fuel.current = turtle.getFuelLevel()
+	ultron.data.fuel.max = turtle.getFuelLimit()
+	
+	ultron.data.selectedSlot = turtle.getSelectedSlot()
+		
+	for i = 1, 16 do
+		local item = turtle.getItemDetail(i, true)
+		if item then
+			ultron.data.inventory[i] = item
+		else
+			ultron.data.inventory[i] = {}
+		end
+	end
+	turtle.select(ultron.data.selectedSlot)
+
+	local TurtleData =  textutils.serializeJSON(ultron.data)
+	ultron.ws("send",TurtleData)
+end
+		
+-- process cmdQueue as functionlocal function recieveOrders()
+local function recieveOrders()
+	ultron.data.cmdQueue = ultron.recieveOrders(ultron.data.cmdQueue)
+end
+local function processCmdQueue()
+	local result = ultron.processCmdQueue(ultron.data.cmdQueue)
+	if result then
+		ultron.data.cmdResult = result
+	end
+end
+
+		
+local function waitForDelay()
+	sleep(ultron.config.api.delay)
+end
+		
+local function event_TurtleInventory()
+	os.pullEvent("turtle_inventory")
+end
+local function apiLoop()
+	while true do
+		updateControl()
+		parallel.waitForAny(waitForDelay,  event_TurtleInventory)
+	end
+end
+		
+local function main()
+	parallel.waitForAll(apiLoop, recieveOrders, processCmdQueue)
+end
+		
+-- load cmdQueue from file /cmdQueue.json
+local file = fs.open("/cmdQueue.json", "r")
+if file then
+	local cmdQueue = textutils.unserializeJSON(file.readAll())
+	file.close()
+	if cmdQueue then
+		ultron.data.cmdQueue = cmdQueue
+	end
+end
+	
+while true do
+	local succ, err = pcall(main)
+	if not succ then
+		print("[Error] " .. err)
+		break
+	end
+end
+ultron.ws("close")
+`))
+	}
+
+	log.Println("[FS]", file)
 }

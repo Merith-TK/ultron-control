@@ -24,14 +24,22 @@ if not fs.exists("cfg/module") then
 else
 	local cfg = fs.open("cfg/module", "r")
 	currentModule = cfg.readAll()
+	if not currentModule then
+		print("No module selected")
+		return
+	end
 	ultron.module = currentModule
 	ultron.config.api.ws = ultron.config.api.host .. "/" .. currentModule .. "/ws"
 	ultron.download_module(currentModule)
 	cfg.close()
 end
 
-ultron.wget("startup.lua", ultron.config.api.host .. "/static/startup.lua")
-ultron.wget("ultron.lua", ultron.config.api.host .. "/static/ultron.lua")
-ultron.wget("module.lua", ultron.config.api.host .. "/"..currentModule.."/fs/module.lua")
+if not fs.exists("cfg/disableUpdate") then
+	ultron.wget("startup.lua", ultron.config.api.host .. "/static/startup.lua")
+	ultron.wget("ultron.lua", ultron.config.api.host .. "/static/ultron.lua")
+	ultron.wget("module.lua", ultron.config.api.host .. "/"..currentModule.."/fs/module.lua")
+else
+	ultron.debugPrint("Update is disabled")
+end
 
 shell.run("module.lua")
