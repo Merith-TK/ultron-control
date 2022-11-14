@@ -25,6 +25,7 @@ func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
 	// load plugins
 	r = module.LoadModules(r, dataDir+"/modules")
 	r.HandleFunc("/api/modules", func(w http.ResponseWriter, r *http.Request) {
+		// TODO: Find out why this returns double the data occasionally
 		ReturnData(w, module.ModuleList)
 	})
 
@@ -47,10 +48,6 @@ func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
 	// start webserver on config.Port
 	portstr := strconv.Itoa(port)
 	http.ListenAndServe(domain+":"+portstr, r)
-}
-
-func notFoundHandler(w http.ResponseWriter, r *http.Request) {
-	ReturnError(w, http.StatusNotImplemented, "Server Error: Check for trailing / in url, or verify against documentation of API")
 }
 
 // ReturnError returns an error to the client with the specified status code and message
