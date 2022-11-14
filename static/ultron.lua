@@ -1,6 +1,8 @@
 -- create config structure
 local ultron = {}
 local cID = os.getComputerID()
+-- ultron.config is the main config that the host of the API can use
+-- you should not need to change more than ultron.config.host
 ultron.config = {
 	debug = true,
 	version = "0.0.1",

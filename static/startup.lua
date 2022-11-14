@@ -5,6 +5,12 @@ term.setCursorPos(1,1)
 local currentModule = ""
 
 if not fs.exists("cfg/module") then
+
+	--[[	TODO: make this autoselect known fixed modules, 
+			such as the computer module on computers that are
+			not turtles or command computers.
+			basically just simplify this whole process
+	]]--
 	print("Which module do you want to use?")
 	for i, module in ipairs(ultron.modules) do
 		print(i .. ": " .. module.Name)
