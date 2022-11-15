@@ -12,7 +12,9 @@ air-setup:
 	go build -o tmp/main.exe
 
 pull:
+	git stash
 	git pull
+	git stash pop
 
 example-plugin:
 	@echo "Building Example Plugin to workdir/modules"
