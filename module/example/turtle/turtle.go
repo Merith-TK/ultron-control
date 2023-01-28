@@ -36,6 +36,7 @@ func Init(m *mux.Router) {
 	m.HandleFunc("/api/turtle", Handle)
 	m.HandleFunc("/api/turtle/{id}", Handle)
 	m.HandleFunc("/api/turtle/{id}/{action}", Handle)
+	m.HandleFunc("/api/turtle/{id}/{action}/{action2}", Handle)
 }
 
 var Turtles []Turtle
@@ -65,8 +66,7 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	idInt, _ := strconv.Atoi(id)
-	action := vars["action"]
-
+	action, action2 := vars["action"], vars["action2"]
 	if id == "ws" {
 		HandleWs(w, r)
 		return
@@ -131,8 +131,16 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 				// return turtle name
 				api.ReturnData(w, currentTurtle.Name)
 			case "fuel":
-				// return turtle fuel
-				api.ReturnData(w, currentTurtle.Fuel)
+				if action2 == "" {
+					// return turtle fuel
+					api.ReturnData(w, currentTurtle.Fuel)
+				} else if action2 == "current" {
+					// return turtle fuel current
+					api.ReturnData(w, currentTurtle.Fuel.Current)
+				} else if action2 == "max" {
+					// return turtle fuel max
+					api.ReturnData(w, currentTurtle.Fuel.Max)
+				}
 			case "misc":
 				// return turtle misc
 				api.ReturnData(w, currentTurtle.MiscData)
@@ -143,10 +151,21 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 				// return turtle selected slot
 				api.ReturnData(w, currentTurtle.SelectedSlot)
 			case "pos":
-				//return turtle position
-				api.ReturnData(w, currentTurtle.Pos)
+				// return turtle pos
+				if action2 == "" {
+					api.ReturnData(w, currentTurtle.Pos)
+				} else if action2 == "x" {
+					api.ReturnData(w, currentTurtle.Pos.X)
+				} else if action2 == "y" {
+					api.ReturnData(w, currentTurtle.Pos.Y)
+				} else if action2 == "z" {
+					api.ReturnData(w, currentTurtle.Pos.Z)
+				} else if action2 == "r" {
+					api.ReturnData(w, currentTurtle.Pos.R)
+				} else if action2 == "rname" {
+					api.ReturnData(w, currentTurtle.Pos.Rname)
+				}
 			case "cmdQueue":
-				// return turtle cmdQueue
 				api.ReturnData(w, currentTurtle.CmdQueue)
 			case "cmdResult":
 				// return turtle cmdResult

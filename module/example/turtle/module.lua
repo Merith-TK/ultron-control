@@ -1,6 +1,6 @@
 local ultron = require("ultron")
 assert(ultron)
-		
+
 if not fs.exists("/skyrtle.lua") then
 	local localfile = fs.open("skyrtle.lua", "w")
 	local dl = http.get("https://raw.githubusercontent.com/SkyTheCodeMaster/SkyDocs/main/src/main/misc/skyrtle.lua")
@@ -44,7 +44,33 @@ ultron.data = {
 	miscData = {},
 }
 
-		
+if fs.exists("/cfg/inspectWorld") then
+	ultron.debugPrint("Inspect World Enabled")
+end
+local function inspectWorld()
+	if fs.exists("/cfg/inspectWorld") then
+		ultron.data.miscData.sight = {
+			up = {},
+			down = {},
+			front = {},
+		}
+		local up, upName = turtle.inspectUp()
+		local down, downName = turtle.inspectDown()
+		local front, frontName = turtle.inspect()
+		if up then
+			ultron.data.miscData.sight.up = upName
+		end
+		if down then
+			ultron.data.miscData.sight.down = downName
+		end
+		if front then
+			ultron.data.miscData.sight.front = frontName
+		end
+		print(textutils.serialize(ultron.data.miscData.sight))
+	end
+end
+
+
 -- function to send turtle data to websocket
 local function updateControl()
 	ultron.data.id = os.getComputerID()
@@ -63,12 +89,12 @@ local function updateControl()
 	ultron.data.pos.z = z
 	ultron.data.pos.r = r
 	ultron.data.pos.rname = rname
-		
+
 	ultron.data.fuel.current = turtle.getFuelLevel()
 	ultron.data.fuel.max = turtle.getFuelLimit()
-	
+
 	ultron.data.selectedSlot = turtle.getSelectedSlot()
-		
+
 	for i = 1, 16 do
 		local item = turtle.getItemDetail(i, true)
 		if item then
@@ -82,23 +108,25 @@ local function updateControl()
 	local TurtleData =  textutils.serializeJSON(ultron.data)
 	ultron.ws("send",TurtleData)
 end
-		
+
 -- process cmdQueue as functionlocal function recieveOrders()
 local function recieveOrders()
 	ultron.data.cmdQueue = ultron.recieveOrders(ultron.data.cmdQueue)
 end
 local function processCmdQueue()
-	local result = ultron.processCmdQueue(ultron.data.cmdQueue)
-	if result then
-		ultron.data.cmdResult = result
+	while true do
+		local result = ultron.processCmdQueue(ultron.data.cmdQueue)
+		if result then
+			ultron.data.cmdResult = result
+		end
 	end
 end
 
-		
+
 local function waitForDelay()
 	sleep(ultron.config.api.delay)
 end
-		
+
 local function event_TurtleInventory()
 	os.pullEvent("turtle_inventory")
 end
@@ -108,11 +136,11 @@ local function apiLoop()
 		parallel.waitForAny(waitForDelay,  event_TurtleInventory)
 	end
 end
-		
+
 local function main()
 	parallel.waitForAll(apiLoop, recieveOrders, processCmdQueue)
 end
-		
+
 -- load cmdQueue from file /cmdQueue.json
 local file = fs.open("/cmdQueue.json", "r")
 if file then
@@ -122,7 +150,7 @@ if file then
 		ultron.data.cmdQueue = cmdQueue
 	end
 end
-	
+
 while true do
 	local succ, err = pcall(main)
 	if not succ then

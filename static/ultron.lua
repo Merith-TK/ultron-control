@@ -167,10 +167,11 @@ end
 -- processQueue(queue)
 -- Processes the queue
 function ultron.processCmdQueue(cmdQueue)
+	ultron.debugPrint("Processing cmdQueue")
 	ultron.data.cmdQueue = cmdQueue
 	while true do
-		-- check if cmdQueue is empty
 		if #ultron.data.cmdQueue ~= 0 then
+			ultron.debugPrint("cmdQueue not empty")
 			while #ultron.data.cmdQueue ~= 0 do
 				cmdResult = nil
 				local cmd = table.remove(ultron.data.cmdQueue, 1)
@@ -186,7 +187,7 @@ function ultron.processCmdQueue(cmdQueue)
 				end
 			end
 		else
-			sleep()
+			sleep(ultron.config.api.delay)
 		end
 	end
 end
@@ -203,10 +204,13 @@ function ultron.recieveOrders()
 				local data = textutils.unserializeJSON(data)
 				if data then
 					ultron.debugPrint("Received orders: " .. textutils.serialize(data))
-					if data.type == "orders" then
-						ultron.data.orders = data.orders
-						ultron.debugPrint("Orders: " .. textutils.serialize(ultron.data.orders))
-						ultron.saveOrders()
+					for i = 1, #data do
+						if data[i] == "ultron.break()" then
+							ultron.data.cmdQueue = {}
+							ultron.saveCommandQueue()
+							os.reboot()
+						end
+						table.insert(ultron.data.cmdQueue, data[i])
 					end
 				end
 			end

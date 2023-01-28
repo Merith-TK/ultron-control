@@ -8,6 +8,7 @@ stop: down
 restart: down default
 
 air:
+	rm -rf workdir/modules
 	bash module/example/build.sh
 	go build -o tmp/main.exe
 
