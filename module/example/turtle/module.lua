@@ -37,6 +37,20 @@ ultron.data = {
 		current = 0,
 		max = 0,
 	},
+	sight = {
+		up = {
+			name = "",
+			data = {},
+		},
+		down = {
+			name = "",
+			data = {},
+		},
+		front = {
+			name = "",
+			data = {},
+		},
+	},
 	selectedSlot = 0,
 	inventory = {},
 	cmdResult = {},
@@ -49,24 +63,21 @@ if fs.exists("/cfg/inspectWorld") then
 end
 local function inspectWorld()
 	if fs.exists("/cfg/inspectWorld") then
-		ultron.data.miscData.sight = {
-			up = {},
-			down = {},
-			front = {},
-		}
+		local sight = {}
 		local up, upName = turtle.inspectUp()
 		local down, downName = turtle.inspectDown()
 		local front, frontName = turtle.inspect()
 		if up then
-			ultron.data.miscData.sight.up = upName
+			sight.up = upName.name
 		end
 		if down then
-			ultron.data.miscData.sight.down = downName
+			sight.down = downName.name
 		end
 		if front then
-			ultron.data.miscData.sight.front = frontName
+			sight.front = frontName.anme
 		end
-		print(textutils.serialize(ultron.data.miscData.sight))
+		print(textutils.serialize(sight))
+		return sight
 	end
 end
 
@@ -103,7 +114,12 @@ local function updateControl()
 			ultron.data.inventory[i] = {}
 		end
 	end
+	
+
+	ultron.data.sight = inspectWorld()
+	
 	turtle.select(ultron.data.selectedSlot)
+
 
 	local TurtleData =  textutils.serializeJSON(ultron.data)
 	ultron.ws("send",TurtleData)

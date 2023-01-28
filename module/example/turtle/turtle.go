@@ -57,6 +57,11 @@ type Turtle struct {
 		Current int `json:"current"`
 		Max     int `json:"max"`
 	} `json:"fuel"`
+	Sight struct {
+		Up    string `json:"up"`
+		Down  string `json:"down"`
+		Front string `json:"front"`
+	} `json:"sight"`
 	CmdResult []interface{} `json:"cmdResult"`
 	CmdQueue  []string      `json:"cmdQueue"`
 	MiscData  []interface{} `json:"miscData"`
@@ -150,6 +155,17 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 			case "selectedSlot":
 				// return turtle selected slot
 				api.ReturnData(w, currentTurtle.SelectedSlot)
+			case "sight":
+				// return turtle sight
+				if action2 == "" {
+					api.ReturnData(w, currentTurtle.Sight)
+				} else if action2 == "up" {
+					api.ReturnData(w, currentTurtle.Sight.Up)
+				} else if action2 == "down" {
+					api.ReturnData(w, currentTurtle.Sight.Down)
+				} else if action2 == "front" {
+					api.ReturnData(w, currentTurtle.Sight.Front)
+				}
 			case "pos":
 				// return turtle pos
 				if action2 == "" {
@@ -271,6 +287,10 @@ func HandleWs(w http.ResponseWriter, r *http.Request) {
 			Turtles[pos].CmdQueue = []string{}
 			currentTurtle.CmdQueue = []string{}
 		}
+		// import currentTurtle.Sight into Turtles[pos].Sight
+		Turtles[pos].Sight = currentTurtle.Sight
+		// Comment: Dont even know why I did this, or if it is even needed. but the code works as is so I am not touching it
+
 	}
 }
 
