@@ -123,6 +123,13 @@ local function updateControl()
 
 	local TurtleData =  textutils.serializeJSON(ultron.data)
 	ultron.ws("send",TurtleData)
+	if ultron.config.debug then
+		local packetFile = fs.open("/lastPacket.json", "w")
+		packetFile.write(TurtleData)
+		packetFile.close()
+	elseif fs.exists("/lastPacket.json") then
+		fs.delete("/lastPacket.json")
+	end
 end
 
 -- process cmdQueue as functionlocal function recieveOrders()

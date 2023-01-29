@@ -16,6 +16,11 @@ ultron.config = {
 ultron.module = ""
 ultron.data = {}
 
+-- If cfg/debug exists, enable debug
+if fs.exists("/cfg/debug") then
+	ultron.config.debug = true
+end
+
 --------------------------------------------------------------------------------
 -- debugPrint(string)
 -- Prints a string to the terminal if debug is enabled
