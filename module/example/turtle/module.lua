@@ -74,7 +74,7 @@ local function inspectWorld()
 			sight.down = downName.name
 		end
 		if front then
-			sight.front = frontName.anme
+			sight.front = frontName.name
 		end
 		print(textutils.serialize(sight))
 		return sight
