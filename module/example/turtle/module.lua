@@ -76,7 +76,6 @@ local function inspectWorld()
 		if front then
 			sight.front = frontName.name
 		end
-		print(textutils.serialize(sight))
 		return sight
 	end
 end
@@ -93,6 +92,8 @@ local function updateControl()
 		ultron.data.name = tostring(ultron.data.id)
 	end
 
+	-- TODO: Move Execution thread to this function to prevent API desync
+
 	local x,y,z = skyrtle.getPosition()
 	local r, rname = skyrtle.getFacing()
 	ultron.data.pos.x = x
@@ -100,6 +101,10 @@ local function updateControl()
 	ultron.data.pos.z = z
 	ultron.data.pos.r = r
 	ultron.data.pos.rname = rname
+	if gps.locate() then
+		x,y,z = gps.locate()
+		-- TODO: set skyrtle position to gps position
+	end
 
 	ultron.data.fuel.current = turtle.getFuelLevel()
 	ultron.data.fuel.max = turtle.getFuelLimit()
@@ -114,10 +119,9 @@ local function updateControl()
 			ultron.data.inventory[i] = {}
 		end
 	end
-	
 
 	ultron.data.sight = inspectWorld()
-	
+
 	turtle.select(ultron.data.selectedSlot)
 
 
