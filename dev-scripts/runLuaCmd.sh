@@ -21,5 +21,3 @@ curl --header "Content-Type: application/json" \
   --request POST \
   --data "$finalCMD" \
   $ultronURL/turtle/$turtleID
-
-  echo $ultronURL/turtle/$turtleID

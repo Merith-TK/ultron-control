@@ -8,6 +8,6 @@ do
     echo "Building $folder"
 	# remove trailing / from folder name
 	folder2=${folder%/}
-    go build -buildmode=plugin -o ../../workdir/modules/$folder2.ult.so ./$folder
+    go build -buildmode=plugin -buildvcs=false  -o ../../workdir/modules/$folder2.ult.so ./$folder
 done
 popd

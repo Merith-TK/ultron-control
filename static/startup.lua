@@ -1,51 +1,47 @@
 local ultron = require("ultron")
 term.clear()
-term.setCursorPos(1,1)
+term.setCursorPos(1, 1)
 
 local currentModule = ""
 
 if not fs.exists("cfg/module") then
-
-	--[[	TODO: make this autoselect known fixed modules, 
+    --[[	TODO: make this autoselect known fixed modules, 
 			such as the computer module on computers that are
 			not turtles or command computers.
 			basically just simplify this whole process
-	]]--
-	print("Which module do you want to use?")
-	for i, module in ipairs(ultron.modules) do
-		print(i .. ": " .. module.Name)
-	end
-	local choice = tonumber(read())
-	-- check if choice is valid
-	if choice and choice > 0 and choice <= #ultron.modules then
-		local module = ultron.modules[choice]
-		ultron.download_module(module.Name)
-	end
-	if not fs.exists("cfg") then
-		fs.makeDir("cfg")
-	end
-	local cfg = fs.open("cfg/module", "w")
-	cfg.write(ultron.modules[choice].Name)
-	cfg.close()
-else
-	local cfg = fs.open("cfg/module", "r")
-	currentModule = cfg.readAll()
-	if not currentModule then
-		print("No module selected")
-		return
-	end
-	ultron.module = currentModule
-	ultron.config.api.ws = ultron.config.api.host .. "/" .. currentModule .. "/ws"
-	ultron.download_module(currentModule)
-	cfg.close()
+	]] --
+    print("Which module do you want to use?")
+    for i, module in ipairs(ultron.modules) do
+        print(i .. ": " .. module.Name)
+    end
+    local choice = tonumber(read())
+    -- check if choice is valid
+    if choice and choice > 0 and choice <= #ultron.modules then
+        if not fs.exists("cfg") then fs.makeDir("cfg") end
+        local cfg = fs.open("cfg/module", "w")
+        cfg.write(ultron.modules[choice].Name)
+        cfg.close()
+    end
 end
 
+local cfg = fs.open("cfg/module", "r")
+currentModule = cfg.readAll()
+if not currentModule then
+    print("No module selected")
+    return
+end
+ultron.module = currentModule
+ultron.config.api.ws = ultron.config.api.host .. "/" .. currentModule .. "/ws"
+ultron.debugPrint("Current Module " .. currentModule)
+cfg.close()
+
 if not fs.exists("cfg/disableUpdate") then
-	ultron.wget("startup.lua", ultron.config.api.host .. "/static/startup.lua")
-	ultron.wget("ultron.lua", ultron.config.api.host .. "/static/ultron.lua")
-	ultron.wget("module.lua", ultron.config.api.host .. "/"..currentModule.."/fs/module.lua")
+    ultron.wget("startup.lua", ultron.config.api.host .. "/static/startup.lua")
+    ultron.wget("ultron.lua", ultron.config.api.host .. "/static/ultron.lua")
+    ultron.wget("module.lua", ultron.config.api.host .. "/" .. currentModule ..
+                    "/fs/module.lua")
 else
-	ultron.debugPrint("Update is disabled")
+    ultron.debugPrint("Update is disabled")
 end
 
 shell.run("module.lua")
