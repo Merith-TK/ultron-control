@@ -5,4 +5,7 @@
 tasks:
   - init: make
 
-
+vscode:
+  extensions:
+    - lemmmy.computercraft-extension-pack
+    - golang.go

@@ -25,7 +25,8 @@ func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
 	// load plugins
 	r = module.LoadModules(r, dataDir+"/modules")
 	r.HandleFunc("/api/modules", func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(module.ModuleList)
+		// TODO: Find out why this returns double the data occasionally
+		ReturnData(w, module.ModuleList)
 	})
 
 	// Serve Turtle Files
@@ -49,20 +50,21 @@ func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
 	http.ListenAndServe(domain+":"+portstr, r)
 }
 
-func notFoundHandler(w http.ResponseWriter, r *http.Request) {
-	ReturnError(w, http.StatusNotImplemented, "Server Error: Check for trailing / in url, or verify against documentation of API")
-}
-
 // ReturnError returns an error to the client with the specified status code and message
 func ReturnError(w http.ResponseWriter, code int, message string) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte("{ \"error\": { \"code\":" + strconv.Itoa(code) + ", \"message\": \"" + message + "\" } }"))
+	ReturnData(w, map[string]interface{}{"error": map[string]interface{}{"code": strconv.Itoa(code), "message": message}})
 }
 
 // ReturnData returns data as json to the client
 func ReturnData(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(data)
+}
+
+func ReturnDataRaw(w http.ResponseWriter, data []byte) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
 }
 
 var upgrader = websocket.Upgrader{

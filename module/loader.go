@@ -13,6 +13,12 @@ import (
 
 var ModuleList []Module
 
+type Module struct {
+	Name    string
+	Version string
+	Desc    string
+}
+
 func LoadModules(r *mux.Router, moduleDir string) *mux.Router {
 	// check for module directory, if not found, create it
 	if _, err := os.Stat(moduleDir); os.IsNotExist(err) {
