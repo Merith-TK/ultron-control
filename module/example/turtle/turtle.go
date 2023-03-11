@@ -71,6 +71,9 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	idInt, _ := strconv.Atoi(id)
+	if id == "debug" {
+		idInt = -1
+	}
 	action, action2 := vars["action"], vars["action2"]
 	if id == "ws" {
 		HandleWs(w, r)
@@ -98,13 +101,36 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if id == "debug" {
-		// create new empty turtle for debugging api
-		currentTurtle.ID = -1
-		currentTurtle.Name = "debug"
-		currentTurtle.CmdQueue = []string{}
-		currentTurtle.CmdResult = nil
-		found = true
-		Turtles = append(Turtles, currentTurtle)
+		//	find the debug turtle in Turtles
+		for p, t := range Turtles {
+			if t.Name == "debug" {
+				currentTurtle = t
+				found = true
+				pos = p
+				break
+			}
+		}
+		if !found {
+			// create new empty turtle for debugging api
+			currentTurtle.ID = -1
+			currentTurtle.Name = "debug"
+			currentTurtle.CmdQueue = []string{}
+			currentTurtle.CmdResult = nil
+			currentTurtle.Inventory = []interface{}{}
+			currentTurtle.MiscData = []interface{}{}
+			currentTurtle.Pos.R = 0
+			currentTurtle.Pos.Rname = "north"
+			currentTurtle.Pos.X = 0
+			currentTurtle.Pos.Y = 0
+			currentTurtle.Pos.Z = 0
+			currentTurtle.Fuel.Current = 0
+			currentTurtle.Fuel.Max = 0
+			currentTurtle.Sight.Up = "minecraft:air"
+			currentTurtle.Sight.Down = "minecraft:air"
+			currentTurtle.Sight.Front = "minecraft:air"
+			currentTurtle.SelectedSlot = 0
+			Turtles = append(Turtles, currentTurtle)
+		}
 	}
 
 	// http://localhost:3300/api/turtle/1
