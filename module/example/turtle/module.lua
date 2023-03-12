@@ -70,15 +70,16 @@ local function updateControl()
 
     local x, y, z = skyrtle.getPosition()
     local r, rname = skyrtle.getFacing()
-    ultron.data.pos.x = x
-    ultron.data.pos.y = y
-    ultron.data.pos.z = z
-    ultron.data.pos.r = r
-    ultron.data.pos.rname = rname
     if gps.locate() then
         x, y, z = gps.locate()
         -- TODO: set skyrtle position to gps position
     end
+	ultron.data.pos.x = x
+    ultron.data.pos.y = y
+    ultron.data.pos.z = z
+    ultron.data.pos.r = r
+    ultron.data.pos.rname = rname
+
 
     ultron.data.fuel.current = turtle.getFuelLevel()
     ultron.data.fuel.max = turtle.getFuelLimit()
