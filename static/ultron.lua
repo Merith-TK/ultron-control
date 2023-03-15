@@ -7,7 +7,7 @@ ultron.config = {
     debug = true,
     version = "0.0.1",
     api = {
-        host = "https://3300-merithtk-ultroncontrol-a0gelz3t985.ws-us90.gitpod.io/api",
+        host = "http://localhost:3300/api",
         delay = 0.5,
         timeout = 5,
         retries = 3
@@ -39,7 +39,7 @@ end
 ultron.get_modules()
 
 --------------------------------------------------------------------------------
--- extra functions for the api
+-- Remote Target Functions
 --------------------------------------------------------------------------------
 
 -- open websocket
@@ -202,29 +202,9 @@ function ultron.recieveOrders()
                 end
             end
         end
-        -- ultron.debugPrint("Waiting for orders")
-        -- local event, url, data = os.pullEvent("websocket_message")
-        -- if data then
-        -- 	ultron.debugPrint("Order Recieved: " .. data)
-        -- 	data = textutils.unserializeJSON(data)
-        -- 	-- append data table contents to ultron.data.cmdQueue
-        -- 	for i = 1, #data do
-        -- 		if data[i] == "ultron.break()" then
-        -- 			ultron.data.cmdQueue = {}
-        -- 			ultron.saveCommandQueue()
-
-        -- 			os.reboot()
-        -- 		end
-        -- 		table.insert(ultron.data.cmdQueue, data[i])
-        -- 	end
-        -- 	ultron.debugPrint("cmdQueue: " .. textutils.serialize(ultron.data.cmdQueue))
-        -- else
-        -- 	ultron.debugPrint("No data recieved")
-        -- end
     end
 end
 
---------------------------------------------------------------------------------
 -- waitForDelay()
 -- Waits for the api delay
 function ultron.waitForDelay()

@@ -9,7 +9,7 @@ restart: down default
 
 air:
 	rm -rf workdir/modules
-	bash module/example/build.sh
+	bash module/build.sh
 	go build -buildvcs=false -o tmp/main.exe
 
 air-setup:
