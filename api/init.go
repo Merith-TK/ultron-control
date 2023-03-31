@@ -32,11 +32,6 @@ func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
 	// Serve Turtle Files
 	r.PathPrefix("/api/static/").Handler(http.StripPrefix("/api/static/", http.FileServer(http.Dir(luaFiles))))
 
-	// handle /api/computer
-	r.HandleFunc("/api/computer/ws", computerWs)
-	r.HandleFunc("/api/computer", handleComputerApi).Methods("GET", "POST")
-	r.HandleFunc("/api/computer/{id}", handleComputerApi).Methods("GET", "POST")
-
 	//handle global api on /api/v1
 	r.HandleFunc("/api", handleGlobalApi)
 
@@ -62,8 +57,10 @@ func ReturnData(w http.ResponseWriter, data interface{}) {
 	json.NewEncoder(w).Encode(data)
 }
 
-func ReturnDataRaw(w http.ResponseWriter, data []byte) {
-	w.Header().Set("Content-Type", "application/json")
+func ReturnDataRaw(w http.ResponseWriter, data []byte, headers map[string]string) {
+	for k, v := range headers {
+		w.Header().Set(k, v)
+	}
 	w.Write(data)
 }
 

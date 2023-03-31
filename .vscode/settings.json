@@ -1,9 +1,10 @@
 {
     "Lua.diagnostics.globals": [
-        "fs",
-        "read",
-        "term",
-        "shell",
-        "sleep"
-    ]
+		"fs",
+		"read",
+		"term",
+		"shell",
+		"sleep",
+		"textutils"
+	]
 }
