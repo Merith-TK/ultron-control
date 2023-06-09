@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-//handle global api
+// handle global api
 func handleGlobalApi(w http.ResponseWriter, r *http.Request) {
 	// list of global api routes
 	if r.Method == "GET" {

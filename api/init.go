@@ -7,8 +7,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-
-	"ultron/module"
 )
 
 func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
@@ -22,12 +20,7 @@ func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
 		w.Write([]byte("Welcome to the Ultron API!"))
 	})
 
-	// load plugins
-	r = module.LoadModules(r, dataDir+"/modules")
-	r.HandleFunc("/api/modules", func(w http.ResponseWriter, r *http.Request) {
-		// TODO: Find out why this returns double the data occasionally
-		ReturnData(w, module.ModuleList)
-	})
+	InitModules(r)
 
 	// Serve Turtle Files
 	r.PathPrefix("/api/static/").Handler(http.StripPrefix("/api/static/", http.FileServer(http.Dir(luaFiles))))
@@ -64,6 +57,6 @@ func ReturnDataRaw(w http.ResponseWriter, data []byte, headers map[string]string
 	w.Write(data)
 }
 
-var upgrader = websocket.Upgrader{
+var Upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }

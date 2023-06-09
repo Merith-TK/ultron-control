@@ -1,21 +1,18 @@
-package main
+package api
 
 import (
-	_ "embed"
 	"encoding/json"
 	"log"
 	"net/http"
 	"strconv"
-	"ultron/api"
 
 	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 )
 
-func Name() string    { return `turtle` } //OP
-func Version() string { return `0.1.0` }
-func Desc() string    { return `The Base turtle control API` } //OP
-func Usage() string {
+// func Name() string    { return `turtle` } //OP
+// func Version() string { return `0.1.0` }
+// func Desc() string    { return `The Base turtle control API` } //OP
+func TurtleUsage() string {
 	return `
 /api/turtle
 	GET: Returns data of all turtles
@@ -27,16 +24,6 @@ func Usage() string {
 /api/turtle/ws
 	This is the websocket for turtles, please do not attempt to use
 `
-}
-
-func Init(m *mux.Router) {
-	//create api for /api/turtle with argument for id
-	m.HandleFunc("/api/turtle/fs", HandleFs)
-	m.HandleFunc("/api/turtle/fs/{file}", HandleFs)
-	m.HandleFunc("/api/turtle", Handle)
-	m.HandleFunc("/api/turtle/{id}", Handle)
-	m.HandleFunc("/api/turtle/{id}/{action}", Handle)
-	m.HandleFunc("/api/turtle/{id}/{action}/{action2}", Handle)
 }
 
 var Turtles []Turtle
@@ -67,7 +54,7 @@ type Turtle struct {
 	MiscData  []interface{} `json:"miscData"`
 }
 
-func Handle(w http.ResponseWriter, r *http.Request) {
+func TurtleHandle(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	idInt, _ := strconv.Atoi(id)
@@ -76,15 +63,11 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	action, action2 := vars["action"], vars["action2"]
 	if id == "ws" {
-		HandleWs(w, r)
+		TurtleHandleWs(w, r)
 		return
 	}
 	if id == "usage" {
-		w.Write([]byte(Usage()))
-		return
-	}
-	if id == "fs" {
-		HandleFs(w, r)
+		w.Write([]byte(TurtleUsage()))
 		return
 	}
 
@@ -141,81 +124,81 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 			// if Turtles is empty
 			if len(Turtles) == 0 {
 				// returnError no Turtles found as json with status code 503
-				api.ReturnError(w, http.StatusServiceUnavailable, "No Turtles found")
+				ReturnError(w, http.StatusServiceUnavailable, "No Turtles found")
 				return
 			} else {
 				//return all turtle data
-				api.ReturnData(w, Turtles)
+				ReturnData(w, Turtles)
 			}
 
 		} else if id != "" {
 			if !found {
-				api.ReturnError(w, http.StatusServiceUnavailable, "Turtle has not been added yet")
+				ReturnError(w, http.StatusServiceUnavailable, "Turtle has not been added yet")
 				return
 			}
 			// make switch for action
 			switch action {
 			case "":
 				// return turtle data
-				api.ReturnData(w, currentTurtle)
+				ReturnData(w, currentTurtle)
 			case "name":
 				// return turtle name
-				api.ReturnData(w, currentTurtle.Name)
+				ReturnData(w, currentTurtle.Name)
 			case "fuel":
 				if action2 == "" {
 					// return turtle fuel
-					api.ReturnData(w, currentTurtle.Fuel)
+					ReturnData(w, currentTurtle.Fuel)
 				} else if action2 == "current" {
 					// return turtle fuel current
-					api.ReturnData(w, currentTurtle.Fuel.Current)
+					ReturnData(w, currentTurtle.Fuel.Current)
 				} else if action2 == "max" {
 					// return turtle fuel max
-					api.ReturnData(w, currentTurtle.Fuel.Max)
+					ReturnData(w, currentTurtle.Fuel.Max)
 				}
 			case "misc":
 				// return turtle misc
-				api.ReturnData(w, currentTurtle.MiscData)
+				ReturnData(w, currentTurtle.MiscData)
 			case "inventory":
 				// return turtle inventory
-				api.ReturnData(w, currentTurtle.Inventory)
+				ReturnData(w, currentTurtle.Inventory)
 			case "selectedSlot":
 				// return turtle selected slot
-				api.ReturnData(w, currentTurtle.SelectedSlot)
+				ReturnData(w, currentTurtle.SelectedSlot)
 			case "sight":
 				// return turtle sight
 				if action2 == "" {
-					api.ReturnData(w, currentTurtle.Sight)
+					ReturnData(w, currentTurtle.Sight)
 				} else if action2 == "up" {
-					api.ReturnData(w, currentTurtle.Sight.Up)
+					ReturnData(w, currentTurtle.Sight.Up)
 				} else if action2 == "down" {
-					api.ReturnData(w, currentTurtle.Sight.Down)
+					ReturnData(w, currentTurtle.Sight.Down)
 				} else if action2 == "front" {
-					api.ReturnData(w, currentTurtle.Sight.Front)
+					ReturnData(w, currentTurtle.Sight.Front)
 				}
 			case "pos":
 				// return turtle pos
 				if action2 == "" {
-					api.ReturnData(w, currentTurtle.Pos)
+					ReturnData(w, currentTurtle.Pos)
 				} else if action2 == "x" {
-					api.ReturnData(w, currentTurtle.Pos.X)
+					ReturnData(w, currentTurtle.Pos.X)
 				} else if action2 == "y" {
-					api.ReturnData(w, currentTurtle.Pos.Y)
+					ReturnData(w, currentTurtle.Pos.Y)
 				} else if action2 == "z" {
-					api.ReturnData(w, currentTurtle.Pos.Z)
+					ReturnData(w, currentTurtle.Pos.Z)
 				} else if action2 == "r" {
-					api.ReturnData(w, currentTurtle.Pos.R)
+					ReturnData(w, currentTurtle.Pos.R)
 				} else if action2 == "rname" {
-					api.ReturnData(w, currentTurtle.Pos.Rname)
+					ReturnData(w, currentTurtle.Pos.Rname)
 				}
 			case "cmdQueue":
-				api.ReturnData(w, currentTurtle.CmdQueue)
+				ReturnData(w, currentTurtle.CmdQueue)
 			case "cmdResult":
 				// return turtle cmdResult
-				api.ReturnData(w, currentTurtle.CmdResult)
+				ReturnData(w, currentTurtle.CmdResult)
 				// print turtle cmdResult
 				log.Println("[Turtle]", currentTurtle.Name, ":", currentTurtle.CmdResult)
 			default:
-				api.ReturnError(w, http.StatusBadRequest, "Invalid action: "+action)
+				ReturnError(w, http.StatusBadRequest, "Invalid action: "+action)
 			}
 		}
 	} else if r.Method == "POST" {
@@ -235,9 +218,9 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 }
 
 // handle turtle websocket
-func HandleWs(w http.ResponseWriter, r *http.Request) {
+func TurtleHandleWs(w http.ResponseWriter, r *http.Request) {
 	// message should come in as json
-	c, err := upgrader.Upgrade(w, r, nil)
+	c, err := Upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Print("upgrade:", err)
 		return
@@ -317,23 +300,5 @@ func HandleWs(w http.ResponseWriter, r *http.Request) {
 		Turtles[pos].Sight = currentTurtle.Sight
 		// Comment: Dont even know why I did this, or if it is even needed. but the code works as is so I am not touching it
 
-	}
-}
-
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool { return true },
-}
-
-// import files from module folder
-//
-//go:embed module.lua
-var fileModule []byte
-
-func HandleFs(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	file := vars["file"]
-	log.Println("[File] Serving file:", file)
-	if file == "module.lua" {
-		w.Write(fileModule)
 	}
 }
