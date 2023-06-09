@@ -8,8 +8,6 @@ stop: down
 restart: down default
 
 air:
-	rm -rf workdir/modules
-	bash module/build.sh
 	go build -buildvcs=false -o tmp/main.exe
 
 air-setup:
@@ -19,7 +17,3 @@ pull:
 	git stash
 	git pull
 	git stash pop
-
-example-plugin:
-	@echo "Building Example Plugin to workdir/modules"
-	go build -buildmode=plugin -o workdir/modules/hello.ult.so module/example/hello.go

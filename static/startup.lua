@@ -16,4 +16,4 @@ else
     ultron.debugPrint("Update is disabled")
 end
 
-shell.run("module.lua")
+shell.run("turtle.lua")
