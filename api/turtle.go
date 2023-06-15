@@ -272,7 +272,7 @@ func TurtleHandleWs(w http.ResponseWriter, r *http.Request) {
 			Turtles[pos] = currentTurtle
 		}
 		// check if currentTurtle.CmdResult is the same as Turtles[pos].CmdResult
-		if currentTurtle.CmdResult != "" {
+		if currentTurtle.CmdResult != Turtles[pos].CmdResult {
 			// log result
 			log.Println("[Turtle]", currentTurtle.Name, ":", currentTurtle.CmdResult)
 		}

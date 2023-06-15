@@ -140,6 +140,8 @@ if file then
     if cmdQueue then ultron.data.cmdQueue = cmdQueue end
 end
 
+print("------------ Ultron Turtle ------------")
+print("--------------- Started ---------------")
 while true do
     local succ, err = pcall(main)
     if not succ then
@@ -148,3 +150,4 @@ while true do
     end
 end
 ultron.ws("close")
+print("--------------- Exited  ---------------")
