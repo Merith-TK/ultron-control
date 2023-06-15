@@ -90,6 +90,7 @@ function ultron.ws(connectionType, data)
         if not err then websocketError(result) end
         if result then
             ultron.debugPrint("Websocket received: " .. result)
+			table.insert(ultron.data.cmdQueue, result)
             return result
         else
             return nil
@@ -147,6 +148,12 @@ function ultron.processCmd(cmd)
         cmdResult = result
         if result then result = textutils.serialize(cmdResult) end
         print("[cmd:out] = " .. tostring(result))
+		local resultStr = tostring(result)
+		resultStr = resultStr:gsub("\n","")
+		resultStr = resultStr:gsub("{  ","{ ")
+		resultStr = resultStr:gsub(",  ",", ")
+		resultStr = resultStr:gsub(",}"," }")
+		ultron.data.cmdResult = resultStr
     end
 end
 --------------------------------------------------------------------------------
@@ -159,7 +166,6 @@ function ultron.processCmdQueue(cmdQueue)
         if #ultron.data.cmdQueue ~= 0 then
             ultron.debugPrint("cmdQueue not empty")
             while #ultron.data.cmdQueue ~= 0 do
-                cmdResult = nil
                 local cmd = table.remove(ultron.data.cmdQueue, 1)
                 local file = fs.open("/cmdQueue.json", "w")
                 file.write(textutils.serializeJSON(ultron.data.cmdQueue))
@@ -169,6 +175,7 @@ function ultron.processCmdQueue(cmdQueue)
                     cmdResult = ultron.processCmd(cmd)
                     if cmdResult then
                         ultron.debugPrint("cmdResult: " .. cmdResult)
+						-- return cmdResult
                     end
                 end
             end

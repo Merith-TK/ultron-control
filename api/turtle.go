@@ -49,7 +49,7 @@ type Turtle struct {
 		Down  string `json:"down"`
 		Front string `json:"front"`
 	} `json:"sight"`
-	CmdResult []interface{} `json:"cmdResult"`
+	CmdResult string        `json:"cmdResult"`
 	CmdQueue  []string      `json:"cmdQueue"`
 	MiscData  []interface{} `json:"miscData"`
 }
@@ -98,7 +98,7 @@ func TurtleHandle(w http.ResponseWriter, r *http.Request) {
 			currentTurtle.ID = -1
 			currentTurtle.Name = "debug"
 			currentTurtle.CmdQueue = []string{}
-			currentTurtle.CmdResult = nil
+			currentTurtle.CmdResult = ""
 			currentTurtle.Inventory = []interface{}{}
 			currentTurtle.MiscData = []interface{}{}
 			currentTurtle.Pos.R = 0
@@ -249,7 +249,7 @@ func TurtleHandleWs(w http.ResponseWriter, r *http.Request) {
 			currentTurtle.ID = -1
 			currentTurtle.Name = "debug"
 			currentTurtle.CmdQueue = []string{}
-			currentTurtle.CmdResult = nil
+			currentTurtle.CmdResult = ""
 			found = true
 			Turtles = append(Turtles, currentTurtle)
 		} else {
@@ -272,29 +272,20 @@ func TurtleHandleWs(w http.ResponseWriter, r *http.Request) {
 			Turtles[pos] = currentTurtle
 		}
 		// check if currentTurtle.CmdResult is the same as Turtles[pos].CmdResult
-		if len(currentTurtle.CmdResult) != len(Turtles[pos].CmdResult) {
+		if currentTurtle.CmdResult != "" {
 			// log result
 			log.Println("[Turtle]", currentTurtle.Name, ":", currentTurtle.CmdResult)
 		}
 		// if cmdQueue is not empty, send cmdQueue to client
 		if len(Turtles[pos].CmdQueue) > 0 {
-			// convert cmdQueue to json
-			jsonCmdQueue, jsonErr := json.Marshal(Turtles[pos].CmdQueue)
-			if jsonErr != nil {
-				log.Println("[Error] Marshalling json:", jsonErr)
-				// return error to client
-				c.WriteMessage(mt, []byte("Error: Marshalling json"))
-			}
-			// send jsonCmdQueue to client and wait for response
-			err := c.WriteMessage(mt, jsonCmdQueue)
+			currentCmd := Turtles[pos].CmdQueue[0]
+			err := c.WriteMessage(mt, []byte(currentCmd))
 			if err != nil {
 				log.Println("write:", err)
 				break
+			} else {
+				Turtles[pos].CmdQueue = Turtles[pos].CmdQueue[1:]
 			}
-			// clear cmdQueue
-
-			Turtles[pos].CmdQueue = []string{}
-			currentTurtle.CmdQueue = []string{}
 		}
 		// import currentTurtle.Sight into Turtles[pos].Sight
 		Turtles[pos].Sight = currentTurtle.Sight

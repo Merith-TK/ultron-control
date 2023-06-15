@@ -41,9 +41,7 @@ ultron.data = {
     miscData = {}
 }
 
-if fs.exists("/cfg/inspectWorld") then ultron.debugPrint("Inspect World Enabled") end
 local function inspectWorld()
-    if fs.exists("/cfg/inspectWorld") then
         local sight = {}
         local up, upName = turtle.inspectUp()
         local down, downName = turtle.inspectDown()
@@ -52,7 +50,6 @@ local function inspectWorld()
         if down then sight.down = downName.name end
         if front then sight.front = frontName.name end
         return sight
-    end
 end
 
 -- function to send turtle data to websocket
