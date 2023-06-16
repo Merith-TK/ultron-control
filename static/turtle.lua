@@ -1,4 +1,3 @@
-local ultron = require("ultron")
 assert(ultron)
 
 if not fs.exists("/skyrtle.lua") then

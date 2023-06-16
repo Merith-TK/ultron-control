@@ -146,14 +146,9 @@ function ultron.processCmd(cmd)
         print("[cmd:in] = " .. cmd)
         local result = {pcall(cmdExec)}
         cmdResult = result
-        if result then result = textutils.serialize(cmdResult) end
+        if result then result = textutils.serialize(cmdResult, {compact = true}) end
         print("[cmd:out] = " .. tostring(result))
-		local resultStr = tostring(result)
-		resultStr = resultStr:gsub("\n","")
-		resultStr = resultStr:gsub("{  ","{ ")
-		resultStr = resultStr:gsub(",  ",", ")
-		resultStr = resultStr:gsub(",}"," }")
-		ultron.data.cmdResult = resultStr
+		ultron.data.cmdResult = result
     end
 end
 --------------------------------------------------------------------------------

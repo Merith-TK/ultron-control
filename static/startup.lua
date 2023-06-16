@@ -1,4 +1,4 @@
-local ultron = require("ultron")
+_G.ultron = require("ultron")
 term.clear()
 term.setCursorPos(1, 1)
 
