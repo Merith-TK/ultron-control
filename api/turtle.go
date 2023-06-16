@@ -52,6 +52,7 @@ type Turtle struct {
 	CmdResult string        `json:"cmdResult"`
 	CmdQueue  []string      `json:"cmdQueue"`
 	MiscData  []interface{} `json:"miscData"`
+	HeartBeat int           `json:"heartbeat`
 }
 
 func TurtleHandle(w http.ResponseWriter, r *http.Request) {

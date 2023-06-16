@@ -38,7 +38,8 @@ ultron.data = {
     inventory = {},
     cmdResult = {},
     cmdQueue = {},
-    miscData = {}
+    miscData = {},
+	heartbeat = 0
 }
 
 local function inspectWorld()
@@ -93,6 +94,7 @@ local function updateControl()
     end
 
     ultron.data.sight = inspectWorld()
+	ultron.data.heartbeat = os.epoch("utc")
 
     turtle.select(ultron.data.selectedSlot)
 
