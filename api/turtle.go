@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -49,10 +50,10 @@ type Turtle struct {
 		Down  string `json:"down"`
 		Front string `json:"front"`
 	} `json:"sight"`
-	CmdResult string        `json:"cmdResult"`
-	CmdQueue  []string      `json:"cmdQueue"`
-	MiscData  []interface{} `json:"miscData"`
-	HeartBeat int           `json:"heartbeat`
+	CmdResult string      `json:"cmdResult"`
+	CmdQueue  []string    `json:"cmdQueue"`
+	MiscData  interface{} `json:"miscData"`
+	HeartBeat int         `json:"heartbeat"`
 }
 
 func TurtleHandle(w http.ResponseWriter, r *http.Request) {
@@ -239,7 +240,13 @@ func TurtleHandleWs(w http.ResponseWriter, r *http.Request) {
 		var currentTurtle Turtle
 
 		//decode json message onto currentTurtle
-		json.Unmarshal(message, &currentTurtle)
+		jsonErr := json.Unmarshal(message, &currentTurtle)
+		if jsonErr != nil {
+			// ignore error that cannot be fixed currently
+			if !strings.Contains(jsonErr.Error(), "Turtle.cmdQueue of type") {
+				log.Println("[Error] Decoding TurtleJson:", jsonErr)
+			}
+		}
 
 		// find currentTurtle in Turtles
 		found := false
@@ -256,7 +263,9 @@ func TurtleHandleWs(w http.ResponseWriter, r *http.Request) {
 		} else {
 			for p, t := range Turtles {
 				if t.ID == currentTurtle.ID {
-					currentTurtle.CmdQueue = t.CmdQueue
+					if currentTurtle.CmdQueue == nil {
+						currentTurtle.CmdQueue = []string{}
+					}
 					t.CmdResult = currentTurtle.CmdResult
 					found = true
 					pos = p
@@ -270,6 +279,7 @@ func TurtleHandleWs(w http.ResponseWriter, r *http.Request) {
 			log.Println("[Turtle] Added new turtle:", currentTurtle.ID, ":", currentTurtle.Name)
 		} else {
 			// update currentTurtle in Turtles
+			currentTurtle.CmdQueue = Turtles[pos].CmdQueue
 			Turtles[pos] = currentTurtle
 		}
 		// check if currentTurtle.CmdResult is the same as Turtles[pos].CmdResult

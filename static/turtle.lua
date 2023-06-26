@@ -36,7 +36,7 @@ ultron.data = {
     selectedSlot = 0,
     inventory = {},
     cmdResult = {},
-    cmdQueue = {},
+    cmdQueue = textutils.empty_json_array,
     miscData = {},
 	heartbeat = 0
 }
@@ -97,7 +97,12 @@ local function updateControl()
 
     turtle.select(ultron.data.selectedSlot)
 
-    local TurtleData = textutils.serializeJSON(ultron.data)
+	local ultronData = ultron.data
+	-- space to modify packet before send
+	if ultronData.cmdQueue == {} then
+		ultronData.cmdQueue = textutils.empty_json_array
+	end
+    local TurtleData = textutils.serializeJSON(ultronData)
     ultron.ws("send", TurtleData)
     if ultron.config.debug then
         local packetFile = fs.open("/lastPacket.json", "w")
@@ -106,6 +111,9 @@ local function updateControl()
     elseif fs.exists("/lastPacket.json") then
         fs.delete("/lastPacket.json")
     end
+	local miscDataFile = fs.open("/miscData.json", "w")
+	miscDataFile.write(textutils.serializeJSON(ultron.data.miscData))
+	miscDataFile.close()
 end
 
 -- process cmdQueue as functionlocal function recieveOrders()
@@ -134,11 +142,18 @@ local function main()
 end
 
 -- load cmdQueue from file /cmdQueue.json
-local file = fs.open("/cmdQueue.json", "r")
-if file then
-    local cmdQueue = textutils.unserializeJSON(file.readAll())
-    file.close()
+local cmdQueueJson = fs.open("/cmdQueue.json", "r")
+if cmdQueueJson then
+    local cmdQueue = textutils.unserializeJSON(cmdQueueJson.readAll())
+    cmdQueueJson.close()
     if cmdQueue then ultron.data.cmdQueue = cmdQueue end
+end
+-- load miscData from /miscData.json
+local miscDataJson = fs.open("/miscData.json", "r")
+if miscDataJson then
+    local miscData = textutils.unserializeJSON(miscDataJson.readAll())
+    miscDataJson.close()
+    if miscData then ultron.data.miscData = miscData end
 end
 
 print("------------ Ultron Turtle ------------")
