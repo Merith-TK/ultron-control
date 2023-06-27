@@ -111,28 +111,23 @@ function ultron.processCmd(cmdQueue)
     if not cmdQueue or cmdQueue == "" then
         return false, "No command queue given"
     end
-    
-    ultron.cmd = cmdQueue
-    
-    while true do
-        if ultron.cmd ~= "" then
-            ultron.debugPrint("Processing cmd: " .. ultron.cmd)
-            local cmdExec, err = load(ultron.cmd, nil, "t", _ENV)
-            if cmdExec then
-                print("[cmd:in] = " .. ultron.cmd)
-                local result = {pcall(cmdExec)}
-                cmdResult = result
-                if result then
-                    result = textutils.serialize(cmdResult, {compact = true})
-                end
-                print("[cmd:out] = " .. tostring(result))
-                ultron.data.cmdResult = result
-                ultron.cmd = "" -- Clearing ultron.cmd after processing the command
-                return result
+    if cmdQueue ~= "" then
+        ultron.debugPrint("Processing cmd: " .. cmdQueue)
+        local cmdExec, err = load(cmdQueue, nil, "t", _ENV)
+        if cmdExec then
+            print("[cmd:in] = " .. cmdQueue)
+            local result = {pcall(cmdExec)}
+            cmdResult = result
+            if result then
+                result = textutils.serialize(cmdResult, {compact = true})
             end
-        else
-            sleep(ultron.config.api.delay)
+            print("[cmd:out] = " .. tostring(result))
+            ultron.data.cmdResult = result
+            ultron.cmd = "" -- Clearing ultron.cmd after processing the command
+            return result
         end
+	else
+        sleep(ultron.config.api.delay)
     end
 end
 
