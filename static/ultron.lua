@@ -88,7 +88,7 @@ function ultron.ws(connectionType, data)
         -- ultron.debugPrint("Websocket sent: " .. data)
     elseif connectionType == "receive" then
         local err, result = pcall(ultron.websocket.receive, 1)
-        if not err then 
+        if not err then
             websocketError(result)
         else
             if result then
@@ -105,8 +105,6 @@ function ultron.ws(connectionType, data)
         ultron.debugPrint("Websocket closed")
     end
 end
-
-
 
 --------------------------------------------------------------------------------
 -- processCmd(cmd)
@@ -130,7 +128,7 @@ function ultron.processCmd(cmdQueue)
             ultron.cmd = "" -- Clearing ultron.cmd after processing the command
             return result
         end
-	else
+    else
         sleep(ultron.config.api.delay)
     end
 end
@@ -146,7 +144,8 @@ function ultron.recieveOrders()
             if data then
                 data = textutils.unserializeJSON(data)
                 if data then
-                    ultron.debugPrint("Received orders: " .. textutils.serialize(data))
+                    ultron.debugPrint("Received orders: " ..
+                                          textutils.serialize(data))
                     ultron.cmd = data
                 end
             end

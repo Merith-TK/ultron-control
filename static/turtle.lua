@@ -37,18 +37,18 @@ ultron.data = {
     inventory = {},
     cmdResult = {},
     miscData = {},
-	heartbeat = 0
+    heartbeat = 0
 }
 
 local function inspectWorld()
-        local sight = {}
-        local up, upName = turtle.inspectUp()
-        local down, downName = turtle.inspectDown()
-        local front, frontName = turtle.inspect()
-        if up then sight.up = upName.name end
-        if down then sight.down = downName.name end
-        if front then sight.front = frontName.name end
-        return sight
+    local sight = {}
+    local up, upName = turtle.inspectUp()
+    local down, downName = turtle.inspectDown()
+    local front, frontName = turtle.inspect()
+    if up then sight.up = upName.name end
+    if down then sight.down = downName.name end
+    if front then sight.front = frontName.name end
+    return sight
 end
 
 -- function to send turtle data to websocket
@@ -70,12 +70,11 @@ local function updateControl()
         x, y, z = gps.locate()
         -- TODO: set skyrtle position to gps position
     end
-	ultron.data.pos.x = x
+    ultron.data.pos.x = x
     ultron.data.pos.y = y
     ultron.data.pos.z = z
     ultron.data.pos.r = r
     ultron.data.pos.rname = rname
-
 
     ultron.data.fuel.current = turtle.getFuelLevel()
     ultron.data.fuel.max = turtle.getFuelLimit()
@@ -92,11 +91,11 @@ local function updateControl()
     end
 
     ultron.data.sight = inspectWorld()
-	ultron.data.heartbeat = os.epoch("utc")
+    ultron.data.heartbeat = os.epoch("utc")
 
     turtle.select(ultron.data.selectedSlot)
 
-	local ultronData = ultron.data
+    local ultronData = ultron.data
     local TurtleData = textutils.serializeJSON(ultronData)
     ultron.ws("send", TurtleData)
     if ultron.config.debug then
@@ -106,15 +105,15 @@ local function updateControl()
     elseif fs.exists("/lastPacket.json") then
         fs.delete("/lastPacket.json")
     end
-	local miscDataFile = fs.open("/miscData.json", "w")
-	miscDataFile.write(textutils.serializeJSON(ultron.data.miscData))
-	miscDataFile.close()
+    local miscDataFile = fs.open("/miscData.json", "w")
+    miscDataFile.write(textutils.serializeJSON(ultron.data.miscData))
+    miscDataFile.close()
 end
 
 -- process cmdQueue as functionlocal function recieveOrders()
 local function processCmdQueue()
     while true do
-		sleep()
+        sleep()
         local result = ultron.processCmd(ultron.cmd)
         if result then ultron.data.cmdResult = result end
     end

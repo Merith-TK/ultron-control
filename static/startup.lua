@@ -2,9 +2,7 @@ _G.ultron = require("ultron")
 term.clear()
 term.setCursorPos(1, 1)
 
-if not turtle then
-	print("This program can only run on a Turtle currently")
-end
+if not turtle then print("This program can only run on a Turtle currently") end
 
 ultron.config.api.ws = ultron.config.api.host .. "/" .. "turtle" .. "/ws"
 
