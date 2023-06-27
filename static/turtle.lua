@@ -36,7 +36,6 @@ ultron.data = {
     selectedSlot = 0,
     inventory = {},
     cmdResult = {},
-    cmdQueue = textutils.empty_json_array,
     miscData = {},
 	heartbeat = 0
 }
@@ -98,10 +97,6 @@ local function updateControl()
     turtle.select(ultron.data.selectedSlot)
 
 	local ultronData = ultron.data
-	-- space to modify packet before send
-	if ultronData.cmdQueue == {} then
-		ultronData.cmdQueue = textutils.empty_json_array
-	end
     local TurtleData = textutils.serializeJSON(ultronData)
     ultron.ws("send", TurtleData)
     if ultron.config.debug then
@@ -117,12 +112,10 @@ local function updateControl()
 end
 
 -- process cmdQueue as functionlocal function recieveOrders()
-local function recieveOrders()
-    ultron.data.cmdQueue = ultron.recieveOrders(ultron.data.cmdQueue)
-end
 local function processCmdQueue()
     while true do
-        local result = ultron.processCmdQueue(ultron.data.cmdQueue)
+		sleep()
+        local result = ultron.processCmd(ultron.cmd)
         if result then ultron.data.cmdResult = result end
     end
 end
@@ -138,7 +131,7 @@ local function apiLoop()
 end
 
 local function main()
-    parallel.waitForAll(apiLoop, recieveOrders, processCmdQueue)
+    parallel.waitForAll(apiLoop, ultron.recieveOrders, processCmdQueue)
 end
 
 -- load cmdQueue from file /cmdQueue.json

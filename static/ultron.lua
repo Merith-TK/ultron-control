@@ -3,6 +3,7 @@ local ultron = {}
 local cID = os.getComputerID()
 -- ultron.config is the main config that the host of the API can use
 -- you should not need to change more than ultron.config.host
+ultron.cmd = ""
 ultron.config = {
     debug = false,
     version = "0.0.1",
@@ -90,7 +91,7 @@ function ultron.ws(connectionType, data)
         if not err then websocketError(result) end
         if result then
             ultron.debugPrint("Websocket received: " .. result)
-			table.insert(ultron.data.cmdQueue, result)
+            ultron.cmd = result
             return result
         else
             return nil
@@ -102,77 +103,32 @@ function ultron.ws(connectionType, data)
     end
 end
 
---------------------------------------------------------------------------------
--- loadCommandQueue()
--- Loads the command queue from file
-function ultron.loadCommandQueue()
-    local cmdQueue = {}
-    local file = fs.open("/cmdQueue.json", "r")
-    if file then
-        local data = file.readAll()
-        file.close()
-        if data then
-            cmdQueue = textutils.unserializeJSON(data)
-            ultron.debugPrint("cmdQueue: " .. textutils.serialize(cmdQueue))
-            return cmdQueue
-        else
-            ultron.debugPrint("cmdQueue: " .. textutils.serialize(cmdQueue))
-            return cmdQueue
-        end
-    else
-        ultron.debugPrint("cmdQueue: " .. textutils.serialize(cmdQueue))
-        ultron.data.cmdQueue = cmdQueue
-    end
-end
-
---------------------------------------------------------------------------------
--- saveCommandQueue()
--- Saves the command queue to file
-function ultron.saveCommandQueue()
-    local file = fs.open("/cmdQueue.json", "w")
-    if file then
-        file.write(textutils.serializeJSON(ultron.data.cmdQueue))
-        file.close()
-    end
-end
 
 --------------------------------------------------------------------------------
 -- processCmd(cmd)
 -- Processes a single command
-function ultron.processCmd(cmd)
-    if not cmd then return false, "No command given" end
-    local cmdExec, err = load(cmd, nil, "t", _ENV)
-    if cmdExec then
-        print("[cmd:in] = " .. cmd)
-        local result = {pcall(cmdExec)}
-        cmdResult = result
-        if result then result = textutils.serialize(cmdResult, {compact = true}) end
-        print("[cmd:out] = " .. tostring(result))
-		ultron.data.cmdResult = result
+function ultron.processCmd(cmdQueue)
+    if not cmdQueue or cmdQueue == "" then
+        return false, "No command queue given"
     end
-end
---------------------------------------------------------------------------------
--- processQueue(queue)
--- Processes the queue
-function ultron.processCmdQueue(cmdQueue)
-    ultron.debugPrint("Processing cmdQueue")
-    ultron.data.cmdQueue = cmdQueue
+    
+    ultron.cmd = cmdQueue
+    
     while true do
-        if #ultron.data.cmdQueue ~= 0 then
-            ultron.debugPrint("cmdQueue not empty")
-            while #ultron.data.cmdQueue ~= 0 do
-                local cmd = table.remove(ultron.data.cmdQueue, 1)
-                local file = fs.open("/cmdQueue.json", "w")
-                file.write(textutils.serializeJSON(ultron.data.cmdQueue))
-                file.close()
-                if cmd then
-                    ultron.debugPrint("Processing cmd: " .. cmd)
-                    cmdResult = ultron.processCmd(cmd)
-                    if cmdResult then
-                        ultron.debugPrint("cmdResult: " .. cmdResult)
-						-- return cmdResult
-                    end
+        if ultron.cmd ~= "" then
+            ultron.debugPrint("Processing cmd: " .. ultron.cmd)
+            local cmdExec, err = load(ultron.cmd, nil, "t", _ENV)
+            if cmdExec then
+                print("[cmd:in] = " .. ultron.cmd)
+                local result = {pcall(cmdExec)}
+                cmdResult = result
+                if result then
+                    result = textutils.serialize(cmdResult, {compact = true})
                 end
+                print("[cmd:out] = " .. tostring(result))
+                ultron.data.cmdResult = result
+                ultron.cmd = "" -- Clearing ultron.cmd after processing the command
+                return result
             end
         else
             sleep(ultron.config.api.delay)
@@ -189,18 +145,10 @@ function ultron.recieveOrders()
         if not wsError then
             local data = ultron.ws("receive")
             if data then
-                local data = textutils.unserializeJSON(data)
+                data = textutils.unserializeJSON(data)
                 if data then
-                    ultron.debugPrint("Received orders: " ..
-                                          textutils.serialize(data))
-                    for i = 1, #data do
-                        if data[i] == "ultron.break()" then
-                            ultron.data.cmdQueue = {}
-                            ultron.saveCommandQueue()
-                            os.reboot()
-                        end
-                        table.insert(ultron.data.cmdQueue, data[i])
-                    end
+                    ultron.debugPrint("Received orders: " .. textutils.serialize(data))
+                    ultron.cmd = data
                 end
             end
         end
@@ -260,6 +208,8 @@ function ultron.wget(file, url)
         if fs.exists(file .. ".bak") then fs.delete(file .. ".bak") end
     end
 end
+
+-- for remote install, use `wget run <ultron.config.api.host>/api/static/ultron.lua`
 if shell.getRunningProgram() == "rom/programs/http/wget.lua" then
     ultron.wget("startup.lua", ultron.config.api.host .. "/static/startup.lua")
     ultron.wget("ultron.lua", ultron.config.api.host .. "/static/ultron.lua")
