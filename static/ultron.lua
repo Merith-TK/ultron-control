@@ -88,13 +88,16 @@ function ultron.ws(connectionType, data)
         -- ultron.debugPrint("Websocket sent: " .. data)
     elseif connectionType == "receive" then
         local err, result = pcall(ultron.websocket.receive, 1)
-        if not err then websocketError(result) end
-        if result then
-            ultron.debugPrint("Websocket received: " .. result)
-            ultron.cmd = result
-            return result
+        if not err then 
+            websocketError(result)
         else
-            return nil
+            if result then
+                ultron.debugPrint("Websocket received: " .. result)
+                ultron.cmd = result
+                return result
+            else
+                return nil
+            end
         end
     elseif type == "close" then
         local err, result = pcall(ultron.websocket.close)
@@ -102,6 +105,7 @@ function ultron.ws(connectionType, data)
         ultron.debugPrint("Websocket closed")
     end
 end
+
 
 
 --------------------------------------------------------------------------------
