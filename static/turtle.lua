@@ -36,7 +36,7 @@ ultron.data = {
     selectedSlot = 0,
     inventory = {},
     cmdResult = {},
-    miscData = {},
+    misc = {},
     heartbeat = 0
 }
 
@@ -106,7 +106,7 @@ local function updateControl()
         fs.delete("/lastPacket.json")
     end
     local miscDataFile = fs.open("/miscData.json", "w")
-    miscDataFile.write(textutils.serializeJSON(ultron.data.miscData))
+    miscDataFile.write(textutils.serializeJSON(ultron.data.misc))
     miscDataFile.close()
 end
 
@@ -145,17 +145,33 @@ local miscDataJson = fs.open("/miscData.json", "r")
 if miscDataJson then
     local miscData = textutils.unserializeJSON(miscDataJson.readAll())
     miscDataJson.close()
-    if miscData then ultron.data.miscData = miscData end
+    if miscData then ultron.data.misc = miscData end
 end
 
 print("------------ Ultron Turtle ------------")
 print("--------------- Started ---------------")
-while true do
-    local succ, err = pcall(main)
-    if not succ then
-        print("[Error] " .. err)
-        break
+
+local function startupLoop()
+    if ultron.data.misc.startup then
+        if ultron.data.misc.startup.pastebin then
+            for _, entry in ipairs(ultron.data.misc.startup.pastebin) do
+                print("running pastebin " .. entry)
+                ultron.processCmd('shell.run("pastebin run ' .. entry .. '")')
+            end
+        end
     end
 end
+
+local function mainLoop()
+    while true do
+        local succ, err = pcall(main)
+        if not succ then
+            print("[Error] " .. err)
+            break
+        end
+    end
+end
+
+parallel.waitForAll(mainLoop, startupLoop)
 ultron.ws("close")
 print("--------------- Exited  ---------------")

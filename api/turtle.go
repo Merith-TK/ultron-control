@@ -52,7 +52,7 @@ type Turtle struct {
 	} `json:"sight"`
 	CmdResult string      `json:"cmdResult"`
 	CmdQueue  []string    `json:"cmdQueue"`
-	MiscData  interface{} `json:"miscData"`
+	Misc      interface{} `json:"misc"`
 	HeartBeat int         `json:"heartbeat"`
 }
 
@@ -102,7 +102,7 @@ func TurtleHandle(w http.ResponseWriter, r *http.Request) {
 			currentTurtle.CmdQueue = []string{}
 			currentTurtle.CmdResult = ""
 			currentTurtle.Inventory = []interface{}{}
-			currentTurtle.MiscData = []interface{}{}
+			currentTurtle.Misc = []interface{}{}
 			currentTurtle.Pos.R = 0
 			currentTurtle.Pos.Rname = "north"
 			currentTurtle.Pos.X = 0
@@ -159,7 +159,7 @@ func TurtleHandle(w http.ResponseWriter, r *http.Request) {
 				}
 			case "misc":
 				// return turtle misc
-				ReturnData(w, currentTurtle.MiscData)
+				ReturnData(w, currentTurtle.Misc)
 			case "inventory":
 				// return turtle inventory
 				ReturnData(w, currentTurtle.Inventory)
