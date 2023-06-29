@@ -5,7 +5,7 @@ local cID = os.getComputerID()
 -- you should not need to change more than ultron.config.host
 ultron.cmd = ""
 ultron.config = {
-    debug = false,
+    debug = true,
     version = "0.0.1",
     api = {
         host = "http://localhost:3300/api",

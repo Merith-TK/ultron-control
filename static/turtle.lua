@@ -28,11 +28,7 @@ ultron.data = {
     id = 0,
     pos = {x = 0, y = 0, z = 0, r = 0, rname = ""},
     fuel = {current = 0, max = 0},
-    sight = {
-        up = {name = "", data = {}},
-        down = {name = "", data = {}},
-        front = {name = "", data = {}}
-    },
+    sight = {up = {}, down = {}, front = {}},
     selectedSlot = 0,
     inventory = {},
     cmdResult = {},
@@ -45,9 +41,21 @@ local function inspectWorld()
     local up, upName = turtle.inspectUp()
     local down, downName = turtle.inspectDown()
     local front, frontName = turtle.inspect()
-    if up then sight.up = upName.name end
-    if down then sight.down = downName.name end
-    if front then sight.front = frontName.name end
+    if up then
+        sight.up = upName
+    else
+        sight.up = {}
+    end
+    if down then
+        sight.down = downName
+    else
+        sight.down = {}
+    end
+    if front then
+        sight.front = frontName
+    else
+        sight.front = {}
+    end
     return sight
 end
 
@@ -115,7 +123,9 @@ local function processCmdQueue()
     while true do
         sleep()
         local result = ultron.processCmd(ultron.cmd)
-        if result then ultron.data.cmdResult = result end
+        if result then
+            ultron.data.cmdResult = textutils.unserialise(result)
+        end
     end
 end
 

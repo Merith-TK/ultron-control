@@ -46,11 +46,11 @@ type Turtle struct {
 		Max     int `json:"max"`
 	} `json:"fuel"`
 	Sight struct {
-		Up    string `json:"up"`
-		Down  string `json:"down"`
-		Front string `json:"front"`
+		Up    interface{} `json:"up"`
+		Down  interface{} `json:"down"`
+		Front interface{} `json:"front"`
 	} `json:"sight"`
-	CmdResult string      `json:"cmdResult"`
+	CmdResult interface{} `json:"cmdResult"`
 	CmdQueue  []string    `json:"cmdQueue"`
 	Misc      interface{} `json:"misc"`
 	HeartBeat int         `json:"heartbeat"`
@@ -100,7 +100,7 @@ func TurtleHandle(w http.ResponseWriter, r *http.Request) {
 			currentTurtle.ID = -1
 			currentTurtle.Name = "debug"
 			currentTurtle.CmdQueue = []string{}
-			currentTurtle.CmdResult = ""
+			currentTurtle.CmdResult = []interface{}{}
 			currentTurtle.Inventory = []interface{}{}
 			currentTurtle.Misc = []interface{}{}
 			currentTurtle.Pos.R = 0
@@ -257,13 +257,13 @@ func TurtleHandleWs(w http.ResponseWriter, r *http.Request) {
 			currentTurtle.ID = -1
 			currentTurtle.Name = "debug"
 			currentTurtle.CmdQueue = []string{}
-			currentTurtle.CmdResult = ""
+			currentTurtle.CmdResult = []interface{}{}
 			found = true
 			Turtles = append(Turtles, currentTurtle)
 		} else {
 			for p, t := range Turtles {
 				if t.ID == currentTurtle.ID {
-					if currentTurtle.CmdQueue == nil {
+					if len(currentTurtle.CmdQueue) == 0 {
 						currentTurtle.CmdQueue = []string{}
 					}
 					t.CmdResult = currentTurtle.CmdResult
@@ -282,11 +282,11 @@ func TurtleHandleWs(w http.ResponseWriter, r *http.Request) {
 			currentTurtle.CmdQueue = Turtles[pos].CmdQueue
 			Turtles[pos] = currentTurtle
 		}
-		// check if currentTurtle.CmdResult is the same as Turtles[pos].CmdResult
-		if currentTurtle.CmdResult != Turtles[pos].CmdResult {
-			// log result
-			log.Println("[Turtle]", currentTurtle.Name, ":", currentTurtle.CmdResult)
-		}
+		// // check if currentTurtle.CmdResult is the same as Turtles[pos].CmdResult
+		// if len(currentTurtle.CmdResult) != len(Turtles[pos].CmdResult) {
+		// 	// 	// log result
+		// 	log.Println("[Turtle]", currentTurtle.Name, ":", currentTurtle.CmdResult)
+		// }
 		// if cmdQueue is not empty, send cmdQueue to client
 		if len(Turtles[pos].CmdQueue) > 0 {
 			currentCmd := Turtles[pos].CmdQueue[0]
