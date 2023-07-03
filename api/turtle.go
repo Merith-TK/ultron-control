@@ -144,61 +144,71 @@ func TurtleHandle(w http.ResponseWriter, r *http.Request) {
 				// return turtle data
 				ReturnData(w, currentTurtle)
 			case "name":
-				// return turtle name
 				ReturnData(w, currentTurtle.Name)
-			case "fuel":
-				if action2 == "" {
-					// return turtle fuel
-					ReturnData(w, currentTurtle.Fuel)
-				} else if action2 == "current" {
-					// return turtle fuel current
-					ReturnData(w, currentTurtle.Fuel.Current)
-				} else if action2 == "max" {
-					// return turtle fuel max
-					ReturnData(w, currentTurtle.Fuel.Max)
-				}
-			case "misc":
-				// return turtle misc
-				ReturnData(w, currentTurtle.Misc)
+			case "id":
+				ReturnData(w, currentTurtle.ID)
 			case "inventory":
-				// return turtle inventory
-				ReturnData(w, currentTurtle.Inventory)
+				if action2 == "" {
+					ReturnData(w, currentTurtle.Inventory)
+				} else {
+					act2, convertError := strconv.Atoi(action2)
+					if convertError != nil || act2 < 0 || act2 > 16 {
+						ReturnError(w, http.StatusBadRequest, "Invalid choice "+action2+", please use int 0-15 for slots 1-16")
+					} else {
+						ReturnData(w, currentTurtle.Inventory[act2])
+					}
+				}
 			case "selectedSlot":
-				// return turtle selected slot
 				ReturnData(w, currentTurtle.SelectedSlot)
-			case "sight":
-				// return turtle sight
-				if action2 == "" {
-					ReturnData(w, currentTurtle.Sight)
-				} else if action2 == "up" {
-					ReturnData(w, currentTurtle.Sight.Up)
-				} else if action2 == "down" {
-					ReturnData(w, currentTurtle.Sight.Down)
-				} else if action2 == "front" {
-					ReturnData(w, currentTurtle.Sight.Front)
-				}
 			case "pos":
-				// return turtle pos
-				if action2 == "" {
+				switch action2 {
+				case "":
 					ReturnData(w, currentTurtle.Pos)
-				} else if action2 == "x" {
+				case "x":
 					ReturnData(w, currentTurtle.Pos.X)
-				} else if action2 == "y" {
+				case "y":
 					ReturnData(w, currentTurtle.Pos.Y)
-				} else if action2 == "z" {
+				case "z":
 					ReturnData(w, currentTurtle.Pos.Z)
-				} else if action2 == "r" {
+				case "r":
 					ReturnData(w, currentTurtle.Pos.R)
-				} else if action2 == "rname" {
+				case "rname":
 					ReturnData(w, currentTurtle.Pos.Rname)
+				default:
+					ReturnError(w, http.StatusBadRequest, "Invalid choice "+action2+", please use x,y,z, r or rname")
 				}
+			case "fuel":
+				switch action2 {
+				case "":
+					ReturnData(w, currentTurtle.Fuel)
+				case "current":
+					ReturnData(w, currentTurtle.Fuel.Current)
+				case "max":
+					ReturnData(w, currentTurtle.Fuel.Max)
+				default:
+					ReturnError(w, http.StatusBadRequest, "Invalid choice "+action2+", please use x,y,z, r or rname")
+				}
+			case "sight":
+				switch action2 {
+				case "":
+					ReturnData(w, currentTurtle.Sight)
+				case "down":
+					ReturnData(w, currentTurtle.Sight.Down)
+				case "front":
+					ReturnData(w, currentTurtle.Sight.Front)
+				case "up":
+					ReturnData(w, currentTurtle.Sight.Up)
+				}
+			case "cmdResult":
+				// TODO: Fetch data from Pos/Action2
+				ReturnData(w, currentTurtle.CmdResult)
 			case "cmdQueue":
 				ReturnData(w, currentTurtle.CmdQueue)
-			case "cmdResult":
-				// return turtle cmdResult
-				ReturnData(w, currentTurtle.CmdResult)
-				// print turtle cmdResult
-				log.Println("[Turtle]", currentTurtle.Name, ":", currentTurtle.CmdResult)
+			case "misc":
+				// TODO: Fetch data from Pos/Action2
+				ReturnData(w, currentTurtle.Misc)
+			case "heartbeat":
+				ReturnData(w, currentTurtle.HeartBeat)
 			default:
 				ReturnError(w, http.StatusBadRequest, "Invalid action: "+action)
 			}
