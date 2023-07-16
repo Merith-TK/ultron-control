@@ -12,7 +12,6 @@ import (
 func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
 	// // create webserver on port 3300
 	r := mux.NewRouter()
-	r.Headers("Content-Type", "application/json")
 
 	// handle /
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
