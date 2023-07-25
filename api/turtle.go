@@ -2,6 +2,8 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -216,10 +218,24 @@ func TurtleHandle(w http.ResponseWriter, r *http.Request) {
 	} else if r.Method == "POST" {
 		// r.Body should be a json string
 		// decode json string into currentTurtle.CmdQueue
-		if err := json.NewDecoder(r.Body).Decode(&currentTurtle.CmdQueue); err != nil {
-			log.Println("[Error] Decoding json:", err)
-			w.Write([]byte("Error: Decoding json " + err.Error()))
-			return
+		contentType := r.Header.Get("Content-Type")
+		postBody := r.Body
+		if contentType == "application/json" {
+			if err := json.NewDecoder(postBody).Decode(&currentTurtle.CmdQueue); err != nil {
+				log.Println("[Error] Decoding json:", err)
+				w.Write([]byte("Error: Decoding json " + err.Error()))
+				return
+			}
+		} else if contentType == "text/plain" {
+			if postBody != nil {
+				postbytes, err := ioutil.ReadAll(postBody)
+				if err != nil {
+					// Handle the error appropriately
+					fmt.Println("Error reading data:", err)
+					return
+				}
+				currentTurtle.CmdQueue = append(currentTurtle.CmdQueue, string(postbytes))
+			}
 		}
 
 		// log command queue to console

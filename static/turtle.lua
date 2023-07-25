@@ -1,5 +1,7 @@
 assert(ultron)
 
+_G.pastebin = require("pastebin")
+
 if not fs.exists("/skyrtle.lua") then
     local localfile = fs.open("skyrtle.lua", "w")
     local dl = http.get(
