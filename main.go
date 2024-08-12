@@ -1,8 +1,8 @@
 package main
 
 import (
-	"ultron/api"
-	"ultron/config"
+	"github.com/merith-tk/ultron-control/api"
+	"github.com/merith-tk/ultron-control/config"
 )
 
 func main() {

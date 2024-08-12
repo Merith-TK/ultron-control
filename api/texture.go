@@ -3,7 +3,8 @@ package api
 import (
 	"log"
 	"net/http"
-	"ultron/config"
+
+	"github.com/merith-tk/ultron-control/config"
 
 	"archive/zip"
 	"io"
