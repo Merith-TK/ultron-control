@@ -1,4 +1,4 @@
-module gitlab.com/Merith-TK/ultron-control
+module ultron
 
 go 1.18
 
