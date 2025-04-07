@@ -1,7 +1,3 @@
-Here's the refined documentation incorporating all the detailed response format and additional endpoint information:
-
----
-
 # Ultron Control
 **Complete API Documentation for ComputerCraft Turtles**
 
