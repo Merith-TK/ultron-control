@@ -1,6 +1,9 @@
 # Ultron Control
 **Complete API Documentation for ComputerCraft Turtles**
 
+> Notice: Documentation AI generated from the mess it was before, as well as provided examples of how
+> the data is laid out to the AI. Everything has been verified to be correct
+
 ## Response Format (GET `/api/turtle/<id>`)
 ```json
 {
