@@ -111,22 +111,63 @@ end
 -- Processes a single command
 function ultron.processCmd(cmdQueue)
     if not cmdQueue or cmdQueue == "" then
-        return false, "No command queue given"
+        return {
+            success = false,
+            error = "No command queue given",
+            command = cmdQueue or "",
+            timestamp = os.epoch("utc")
+        }
     end
+    
     if cmdQueue ~= "" then
         ultron.debugPrint("Processing cmd: " .. cmdQueue)
-        local cmdExec, err = load(cmdQueue, nil, "t", _ENV)
+        local startTime = os.epoch("utc")
+        
+        local cmdExec, compileErr = load(cmdQueue, nil, "t", _ENV)
         if cmdExec then
             print("[cmd:in] = " .. cmdQueue)
-            local result = {pcall(cmdExec)}
-            cmdResult = result
-            if result then
-                result = textutils.serialize(cmdResult, {compact = true})
-            end
-            print("[cmd:out] = " .. tostring(result))
-            ultron.data.cmdResult = result
+            
+            -- Execute command and capture result
+            local success, result = pcall(cmdExec)
+            local endTime = os.epoch("utc")
+            
+            -- Create detailed result structure
+            local cmdResult = {
+                success = success,
+                command = cmdQueue,
+                result = success and result or nil,
+                error = success and nil or result,
+                startTime = startTime,
+                endTime = endTime,
+                executionTime = endTime - startTime,
+                timestamp = endTime
+            }
+            
+            print("[cmd:out] = " .. (success and tostring(result) or ("ERROR: " .. tostring(result))))
+            
+            -- Store in turtle data for legacy compatibility
+            ultron.data.cmdResult = cmdResult
             ultron.cmd = "" -- Clearing ultron.cmd after processing the command
-            return result
+            
+            return cmdResult
+        else
+            -- Compilation error
+            local endTime = os.epoch("utc")
+            local cmdResult = {
+                success = false,
+                command = cmdQueue,
+                error = "Compilation error: " .. (compileErr or "unknown error"),
+                startTime = startTime,
+                endTime = endTime,
+                executionTime = endTime - startTime,
+                timestamp = endTime
+            }
+            
+            print("[cmd:err] = " .. cmdResult.error)
+            ultron.data.cmdResult = cmdResult
+            ultron.cmd = ""
+            
+            return cmdResult
         end
     else
         sleep(ultron.config.api.delay)
@@ -142,10 +183,23 @@ function ultron.recieveOrders()
         if not wsError then
             local data = ultron.ws("receive")
             if data then
-                data = textutils.unserializeJSON(data)
-                if data then
-                    ultron.debugPrint("Received orders: " ..
-                                          textutils.serialize(data))
+                -- Try to parse as JSON first
+                local parsedData = textutils.unserializeJSON(data)
+                
+                if parsedData then
+                    -- Check if it's a structured command request
+                    if parsedData.command and parsedData.requestId then
+                        ultron.debugPrint("Received sync command: " .. parsedData.requestId)
+                        -- Handle synchronous command
+                        ultron.handleSyncCommand(parsedData)
+                    else
+                        -- Handle legacy data format
+                        ultron.debugPrint("Received orders: " .. textutils.serialize(parsedData))
+                        ultron.cmd = parsedData
+                    end
+                else
+                    -- Handle raw string commands (legacy)
+                    ultron.debugPrint("Received raw command: " .. data)
                     ultron.cmd = data
                 end
             end
@@ -176,6 +230,30 @@ function ultron.download_module(moduleName)
         print("[Error]: Unable to download module")
     end
     localfile.close()
+end
+
+-- Handle synchronous command execution
+function ultron.handleSyncCommand(cmdRequest)
+    local requestId = cmdRequest.requestId
+    local command = cmdRequest.command
+    
+    ultron.debugPrint("Executing sync command [" .. requestId .. "]: " .. command)
+    
+    -- Execute the command and capture result
+    local result = ultron.processCmd(command)
+    
+    -- Create response structure
+    local response = {
+        requestId = requestId,
+        result = result,
+        success = (result ~= nil and result ~= false)
+    }
+    
+    -- Send response back to server
+    local responseJson = textutils.serializeJSON(response)
+    ultron.ws("send", responseJson)
+    
+    ultron.debugPrint("Sent sync response [" .. requestId .. "]")
 end
 
 function ultron.wget(file, url)

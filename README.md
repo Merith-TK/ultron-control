@@ -1,198 +1,228 @@
 # Ultron Control
-**Complete API Documentation for ComputerCraft Turtles**
 
-> Notice: Documentation AI generated from the mess it was before, as well as provided examples of how
-> the data is laid out to the AI. Everything has been verified to be correct
+A ComputerCraft turtle control system with real-time command execution and comprehensive API.
 
-## Response Format (GET `/api/turtle/<id>`)
-```json
-{
-  "name": "TurtleName",
-  "id": 0,
-  "inventory": [
-    {
-      "count": 52,
-      "displayName": "Cobblestone",
-      "name": "minecraft:cobblestone",
-      "maxCount": 64,
-      "tags": {
-        "c:cobblestones": true,
-        "minecraft:stone_tool_materials": true
-      },
-      "itemGroups": [
-        {
-          "displayName": "Building Blocks",
-          "id": "minecraft:building_blocks"
-        }
-      ]
-    },
-    /* ...15 more slots... */
-  ],
-  "selectedSlot": 2,
-  "pos": {
-    "x": -55,
-    "y": 87,
-    "z": -127,
-    "r": 0,
-    "rname": "north"
-  },
-  "fuel": {
-    "current": 31549,
-    "max": 100000
-  },
-  "sight": {
-    "up": { /* turtle.inspectUp() result */ },
-    "down": { /* turtle.inspectDown() result */ },
-    "front": { /* turtle.inspect() result */ }
-  },
-  "cmdResult": [true, "optional return data"],
-  "cmdQueue": [],
-  "misc": { /* custom data storage */ },
-  "heartbeat": 1743842934360
-}
+## 🚀 Quick Start
+
+### Start the Server
+```bash
+go run main.go
+# Server runs on http://localhost:3300
 ```
 
-### Field Details
-| Field | Description |
-|-------|-------------|
-| `heartbeat` | Last communication timestamp (UTC milliseconds) |
-| `misc` | Custom data storage (modify via `ultron.data.misc` in Lua) |
-| `cmdQueue` | Pending command queue (FIFO) |
-| `cmdResult` | [0]: bool success, [1+]: returned Lua values |
-| `sight` | Results of `inspect()`, `inspectUp()`, `inspectDown()` |
-| `fuel` | `current`/`max` fuel levels |
-| `pos` | `x,y,z` + `r` (0-3) and `rname` (north/east/south/west) |
-| `id` | ComputerCraft's turtle ID (matches API endpoint) |
-| `name` | Custom turtle label |
-| `inventory` | 16 slots (empty slots shown as `{}`), arranged as shown below
+### Execute Commands (Synchronous - Default)
+```powershell
+# Get turtle status
+Invoke-RestMethod -Uri "http://localhost:3300/api/turtle/0" -Method GET
 
-```m
-[1] [2] [3] [4]
-[5] [6] [7] [8]
-[9] [10][11][12]
-[13][14][15][16]
+# Execute command with immediate result (default behavior)
+Invoke-RestMethod -Uri "http://localhost:3300/api/turtle/0" -Method POST -ContentType "text/plain" -Body 'return turtle.getFuelLevel()'
+
+# Queue command for background execution (legacy mode)
+Invoke-RestMethod -Uri "http://localhost:3300/api/turtle/0" -Method POST -ContentType "text/plain" -Headers @{"X-Execution-Mode"="async"} -Body 'print("Background task")'
 ```
 
----
+## 🎯 Key Features
 
-## Core Endpoints
+### ⚡ Real-Time Command Execution (Default)
+- **Synchronous execution**: Commands execute immediately with real-time results
+- **30-second timeout**: Automatic timeout protection
+- **Error handling**: Immediate error feedback and debugging
+- **Interactive**: Perfect for data retrieval and interactive operations
 
-### 1. Get All Turtles
-**`GET /api/turtles`**
-*For discovering turtle IDs - use sparingly*
+### 📋 Queue-Based Execution (Legacy)
+- **Asynchronous execution**: Commands queue for background processing
+- **Batch operations**: Multiple commands in sequence
+- **Long-running tasks**: No timeout limitations
+- **Fire-and-forget**: Ideal for automation and background tasks
 
-*Example response is minified, expect full turtle data tables*
-Response:
-```json
-[
-  {"id": 0, "name": "Miner1", "pos": {"x": 10, "y": 64, "z": -30}},
-  {"id": 1, "name": "Builder", "pos": {"x": 5, "y": 70, "z": 12}}
-]
+### 🔗 WebSocket Connection Tracking
+- **Enhanced connection management**: Real-time turtle connection monitoring
+- **Automatic cleanup**: Proper disconnection handling
+- **Debug logging**: Comprehensive WebSocket event logging
+- **Turtle ID 0 support**: Full support for all turtle IDs including 0
+
+## 📖 API Documentation
+
+### Execution Modes
+
+| Mode | Default | Header Required | Use Case | Response Time |
+|------|---------|----------------|----------|---------------|
+| **Synchronous** | ✅ Yes | None (or `X-Execution-Mode: sync`) | Data retrieval, interactive commands | Immediate |
+| **Asynchronous** | ❌ No | `X-Execution-Mode: async` | Batch operations, long tasks | Queue confirmation |
+
+### Basic API Endpoints
+
+- `GET /api/turtle` - List all turtles
+- `GET /api/turtle/{id}` - Get turtle data
+- `POST /api/turtle/{id}` - Execute command (sync by default)
+- `GET /api/turtle/usage` - API usage documentation
+
+### Command Examples
+
+#### Synchronous Commands (Default)
+```powershell
+# Get fuel level (immediate result)
+Invoke-RestMethod -Uri "http://localhost:3300/api/turtle/0" -Method POST -ContentType "text/plain" -Body 'return turtle.getFuelLevel()'
+
+# Get inventory (immediate result)
+Invoke-RestMethod -Uri "http://localhost:3300/api/turtle/0" -Method POST -ContentType "text/plain" -Body 'return turtle.list()'
+
+# Move turtle (immediate success/failure)
+Invoke-RestMethod -Uri "http://localhost:3300/api/turtle/0" -Method POST -ContentType "text/plain" -Body 'return turtle.forward()'
 ```
 
-### 2. Get Turtle Status
-**`GET /api/turtle/<id>`**
-Returns full status snapshot (see response format above)
+#### Asynchronous Commands (Legacy)
+```powershell
+# Queue multiple commands
+Invoke-RestMethod -Uri "http://localhost:3300/api/turtle/0" -Method POST -ContentType "application/json" -Headers @{"X-Execution-Mode"="async"} -Body '["turtle.forward()", "turtle.turnRight()", "turtle.forward()"]'
 
-### 3. Send Commands
-**`POST /api/turtle/<id>`**
-**Content-Type:** `text/plain`
+# Background task
+Invoke-RestMethod -Uri "http://localhost:3300/api/turtle/0" -Method POST -ContentType "text/plain" -Headers @{"X-Execution-Mode"="async"} -Body 'for i=1,10 do turtle.forward() end'
+```
 
-Executes Lua code on the turtle. Code runs in global environment with access to:
-- All `turtle.*` API functions
-- `ultron.data.misc` for persistent storage
-- Return values populate `cmdResult`
+## 🏗️ Architecture
 
-#### Example Commands:
+### Server Components
+- **Go HTTP Server**: RESTful API with Gorilla mux
+- **WebSocket Handler**: Real-time turtle communication
+- **Connection Tracking**: Active connection management per turtle
+- **Command Execution**: Hybrid sync/async execution engine
+
+### Client Components  
+- **ComputerCraft Lua**: Enhanced turtle scripts
+- **WebSocket Client**: Real-time server communication
+- **Command Processing**: Structured command handling
+- **Result Formatting**: Comprehensive execution metadata
+
+### Communication Protocol
+- **Legacy Messages**: JSON turtle data updates
+- **Structured Messages**: Type-based message handling
+- **Command Responses**: Request/response correlation
+- **Connection Management**: Registration and cleanup
+
+## 📁 Project Structure
+
+```
+├── main.go                 # Application entry point
+├── config.toml            # Configuration file
+├── api/
+│   ├── init.go           # Connection management & sync execution
+│   ├── turtle.go         # Main turtle API handlers
+│   ├── global.go         # Shared data structures
+│   └── setup.go          # API route setup
+├── static/
+│   ├── turtle.lua        # Main turtle program
+│   ├── ultron.lua        # Enhanced turtle library
+│   ├── pastebin.lua      # Auto-update utility
+│   └── startup.lua       # Turtle startup script
+└── .copilot/
+    ├── api-documentation.md    # Complete API documentation
+    ├── test-commands.md        # Test commands and results
+    └── session-notes.md        # Development notes
+```
+
+## 🧪 Testing
+
+### Automated Tests
+```powershell
+# Test basic turtle status
+Invoke-RestMethod -Uri "http://localhost:3300/api/turtle" -Method GET
+
+# Test default sync execution
+Invoke-RestMethod -Uri "http://localhost:3300/api/turtle/0" -Method POST -ContentType "text/plain" -Body 'return "test"'
+
+# Test legacy async execution  
+Invoke-RestMethod -Uri "http://localhost:3300/api/turtle/0" -Method POST -ContentType "text/plain" -Headers @{"X-Execution-Mode"="async"} -Body 'print("test")'
+```
+
+### Development Tools
+- **Air**: Live reload development server
+- **PowerShell**: Windows-compatible testing commands
+- **VS Code**: Integrated development environment
+- **ComputerCraft**: Minecraft mod for turtle execution
+
+## 🔧 Configuration
+
+### Server Configuration (`config.toml`)
+```toml
+[server]
+port = 3300
+static_dir = "static"
+work_dir = "workdir"
+```
+
+### Environment Setup
+1. Install Go 1.19+
+2. Install ComputerCraft mod
+3. Configure turtle scripts
+4. Start development server with Air
+
+## 🚀 Deployment
+
+### Development
+```bash
+# Install Air for live reload
+go install github.com/cosmtrek/air@latest
+
+# Start development server
+air
+```
+
+### Production
+```bash
+# Build binary
+go build -o ultron-control
+
+# Run server
+./ultron-control
+```
+
+## 🎮 ComputerCraft Setup
+
+### Turtle Installation
 ```lua
--- Basic movement with error handling
-if not turtle.forward() then
-  turtle.dig()
-  return "Had to dig through obstacle"
-end
-
--- Inventory management
-turtle.select(1)
-local success, data = turtle.inspectDown()
-return success, data
-
--- Persistent data storage
-ultron.data.misc.last_action = "Mined at "..os.time()
+-- Run this in ComputerCraft turtle to install Ultron scripts
+shell.run("rm", "startup.lua")
+shell.run("pastebin", "get", "XWDutV7S", "startup.lua")
+shell.run("startup.lua")
 ```
 
-#### Command Tips:
-1. Chain actions with error checking:
-   ```lua
-   turtle.turnRight() or turtle.attack()
-   ```
-2. Return inspection data:
-   ```lua
-   return turtle.inspect()
-   ```
-3. Store state between commands:
-   ```lua
-   ultron.data.misc.counter = (ultron.data.misc.counter or 0) + 1
-   ```
+### Turtle Requirements
+- ComputerCraft mod installed
+- Turtle with networking capability
+- Connection to server (localhost:3300)
 
----
+## 📝 Recent Updates
 
-## Practical Usage Guide
+### v2.0 - Synchronous Default
+- **⚡ Default Mode Change**: Synchronous execution is now default
+- **🔗 Enhanced WebSocket**: Improved connection tracking and cleanup  
+- **🐛 Turtle ID 0 Fix**: Full support for turtle ID 0
+- **📋 Better Logging**: Comprehensive debug output
+- **📚 Documentation**: Complete API documentation and examples
 
-### Monitoring Workflow
-1. Poll `/api/turtle/<id>` every 1-5 seconds
-2. Check `cmdResult` for command feedback
-3. Monitor `fuel.current` for refuel needs
-4. Use `sight` data for obstacle detection
+### v1.0 - Foundation
+- **🏗️ Core API**: Basic turtle control API
+- **🔄 Async Commands**: Queue-based command execution
+- **📡 WebSocket Communication**: Real-time turtle communication
+- **🎮 ComputerCraft Integration**: Lua script integration
 
-### Control Patterns
-**Basic Mining:**
-```lua
-while turtle.dig() do
-  turtle.forward()
-  if turtle.detectDown() then
-    turtle.digDown()
-  end
-end
-return "Reached obstacle"
-```
+## 🤝 Contributing
 
-**Item Sorting:**
-```lua
-for slot=1,16 do
-  turtle.select(slot)
-  local item = turtle.getItemDetail()
-  if item and item.name:find("ore") then
-    turtle.drop()
-  end
-end
-return "Inventory sorted"
-```
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
-**Emergency Recall:**
-```lua
-while turtle.getFuelLevel() > 1000 do
-  if not turtle.up() then
-    turtle.digUp()
-  end
-end
-return "Returned to surface"
-```
+## 📄 License
 
----
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Best Practices
-1. **Queue Management**: Limit to 3-5 commands per request
-2. **Error Handling**: Always check command success
-3. **Fuel Safety**: Verify `fuel.current` before long movements
-4. **State Storage**: Use `ultron.data.misc` for persistent data
-5. **Return Values**: Structure returns as `return success, data1, data2`
+## 🙋‍♂️ Support
 
----
-
-## Troubleshooting
-| Symptom | Solution |
-|---------|----------|
-| No `cmdResult` | Ensure your code uses `return` |
-| Empty inventory slots | Normal - slots show as `{}` |
-| Stale heartbeat | Check turtle connectivity |
-| Command timeout | Verify no infinite loops in code |
+For questions, issues, or contributions:
+- Check the [API Documentation](.copilot/api-documentation.md)
+- Review [Test Commands](.copilot/test-commands.md)
+- Open an issue for bugs or feature requests

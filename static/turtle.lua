@@ -126,7 +126,8 @@ local function processCmdQueue()
         sleep()
         local result = ultron.processCmd(ultron.cmd)
         if result then
-            ultron.data.cmdResult = textutils.unserialise(result)
+            -- result is already a table from enhanced processCmd function
+            ultron.data.cmdResult = result
         end
     end
 end
