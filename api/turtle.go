@@ -297,7 +297,12 @@ func TurtleHandle(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			
-			log.Println("[Async Command Queue (Legacy)]: [", Turtles[pos].ID, "]", commands)
+			// Get per-turtle command mutex to ensure FIFO execution with sync commands
+			commandMutex := getTurtleCommandMutex(idInt)
+			commandMutex.mutex.Lock()
+			defer commandMutex.mutex.Unlock()
+			
+			log.Println("[Async Command Queue (Serialized)]: [", Turtles[pos].ID, "]", commands)
 			// Add commands to turtle's queue (existing behavior)
 			Turtles[pos].CmdQueue = append(Turtles[pos].CmdQueue, commands...)
 			
@@ -305,7 +310,7 @@ func TurtleHandle(w http.ResponseWriter, r *http.Request) {
 			ReturnData(w, map[string]interface{}{
 				"success": true,
 				"message": "Commands queued successfully",
-				"mode":    "asynchronous",
+				"mode":    "asynchronous", 
 				"count":   len(commands),
 			})
 			return
