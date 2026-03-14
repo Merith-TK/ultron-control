@@ -1,0 +1,27 @@
+{
+	"name": "Arch Linux Dev Container",
+	"image": "git.merith.xyz/oci/archlinux:latest",
+	"remoteUser": "builder",
+	"remoteEnv": {
+		"CLAUDE_CONFIG_DIR": "${containerWorkspaceFolder}/.devcontainer/do-not-commit"
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"golang.go",
+				"sumneko.lua"
+			],
+			"settings": {
+				"Lua.diagnostics.globals": [
+					"fs",
+					"read",
+					"term",
+					"shell",
+					"sleep",
+					"textutils"
+				]
+			}
+		}
+	},
+	"postCreateCommand": "bash ${containerWorkspaceFolder}/.devcontainer/post-create.sh"
+}
