@@ -30,6 +30,11 @@ func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
 	//handle global api on /api/v1
 	r.HandleFunc("/api", handleGlobalApi)
 
+	// Documentation endpoints
+	r.HandleFunc("/api/docs/list", ListDocs)
+	r.HandleFunc("/api/docs/get", GetDocs)
+	r.HandleFunc("/api/docs/manifest", GetManifest)
+
 	// if page not found, return server error
 	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ReturnError(w, http.StatusNotImplemented, "Server Error: Check for trailing / in url, or verify against documentation of API")
@@ -88,7 +93,7 @@ func getTurtleCommandMutex(turtleID int) *TurtleCommandMutex {
 	commandMutexLock.RLock()
 	mutex, exists := turtleCommandMutexes[turtleID]
 	commandMutexLock.RUnlock()
-	
+
 	if !exists {
 		commandMutexLock.Lock()
 		// Check again in case another goroutine created it
@@ -100,7 +105,7 @@ func getTurtleCommandMutex(turtleID int) *TurtleCommandMutex {
 		}
 		commandMutexLock.Unlock()
 	}
-	
+
 	return mutex
 }
 
@@ -151,9 +156,9 @@ func executeCommandSync(turtleID int, command string, timeout time.Duration) (in
 	commandMutex := getTurtleCommandMutex(turtleID)
 	commandMutex.mutex.Lock()
 	defer commandMutex.mutex.Unlock()
-	
+
 	log.Printf("[Command Serialization] Acquired lock for turtle %d", turtleID)
-	
+
 	// Get turtle connection
 	conn, exists := getTurtleConnection(turtleID)
 	if !exists {

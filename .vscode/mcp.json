@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "ultron-control": {
+      "type": "http",
+      "url": "http://localhost:3300/mcp"
+    }
+  }
+}

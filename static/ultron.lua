@@ -75,8 +75,7 @@ local function websocketError(data)
         end
     end
     -- ultron.debugPrint("Attempting to reconnect...")
-    sleep(ultron.config.apiDelay)
-    openWebsocket()
+    sleep(ultron.config.api.delay)
 end
 
 function ultron.ws(connectionType, data)
@@ -99,7 +98,7 @@ function ultron.ws(connectionType, data)
                 return nil
             end
         end
-    elseif type == "close" then
+    elseif connectionType == "close" then
         local err, result = pcall(ultron.websocket.close)
         if not err then websocketError(result) end
         ultron.debugPrint("Websocket closed")
@@ -136,7 +135,7 @@ function ultron.processCmd(cmdQueue)
                 success = success,
                 command = cmdQueue,
                 result = success and result or nil,
-                error = success and nil or result,
+                error = (not success) and tostring(result) or nil,
                 startTime = startTime,
                 endTime = endTime,
                 executionTime = endTime - startTime,
@@ -180,12 +179,17 @@ end
 function ultron.recieveOrders()
     while true do
         sleep()
-        if not wsError then
+        if wsError then
+            if openWebsocket() then
+                wsError = false
+                ultron.debugPrint("Websocket reconnected")
+            end
+        else
             local data = ultron.ws("receive")
             if data then
                 -- Try to parse as JSON first
                 local parsedData = textutils.unserializeJSON(data)
-                
+
                 if parsedData then
                     -- Check if it's a structured command request
                     if parsedData.command and parsedData.requestId then

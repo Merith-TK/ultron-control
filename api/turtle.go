@@ -443,6 +443,7 @@ func handleLegacyTurtleData(message []byte, turtleID *int, c *websocket.Conn) {
 	if !found {
 		// add currentTurtle to Turtles
 		Turtles = append(Turtles, currentTurtle)
+		pos = len(Turtles) - 1
 		log.Println("[Turtle] Added new turtle:", currentTurtle.ID, ":", currentTurtle.Name)
 	} else {
 		// update currentTurtle in Turtles

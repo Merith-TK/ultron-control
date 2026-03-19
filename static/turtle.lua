@@ -120,7 +120,6 @@ local function updateControl()
     miscDataFile.close()
 end
 
--- process cmdQueue as functionlocal function recieveOrders()
 local function processCmdQueue()
     while true do
         sleep()

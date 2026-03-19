@@ -24,5 +24,12 @@ func InitModules(m *mux.Router) {
 	ExtractResources()
 	log.Println("[Module] Loaded Textures")
 
+	// MCP server (streamable HTTP transport, JSON-RPC 2.0)
+	m.Handle("/mcp", MCPHandler)
+	log.Println("[Module] Loaded MCP")
+
+	// Ensure doc repos are cloned in background
+	go EnsureDocRepos()
+
 	// Add Modules Below this Line
 }

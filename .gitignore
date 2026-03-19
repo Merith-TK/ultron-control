@@ -1,5 +1,5 @@
-ultron
 *.exe
+/ultron-control
 *.so
 vendor/
 workdir/

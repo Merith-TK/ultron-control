@@ -1,0 +1,14 @@
+{
+  "docs": [
+    {
+      "name": "ultron",
+      "root": ".",
+      "local": true
+    },
+    {
+      "name": "computercraft",
+      "repo": "https://github.com/cc-tweaked/CC-Tweaked",
+      "root": "doc"
+    }
+  ]
+}
