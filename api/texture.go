@@ -1,13 +1,10 @@
 package api
 
 import (
-	"log"
-	"net/http"
-
-	"github.com/merith-tk/ultron-control/config"
-
 	"archive/zip"
 	"io"
+	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -35,7 +32,8 @@ import (
 // `
 // }
 
-var TextureWorkdir = config.GetConfig().UltronData
+// TextureWorkdir is set by InitModules from the configured dataDir.
+var TextureWorkdir string
 
 func TextureHandle(w http.ResponseWriter, r *http.Request) {
 

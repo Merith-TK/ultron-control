@@ -55,7 +55,7 @@ func buildMCPServer() *mcp.Server {
 		Name:        "get_instructions",
 		Description: "CALL THIS FIRST. Returns the agent guide — do's, don'ts, crafting rules, run_command usage, and CC:Tweaked API reference. Required reading before operating turtles.",
 	}, func(_ context.Context, _ *mcp.CallToolRequest, _ struct{}) (*mcp.CallToolResult, any, error) {
-		content, err := os.ReadFile(filepath.Join("mcp", "docs", "ultron", "agent-guide.md"))
+		content, err := os.ReadFile(filepath.Join(DocsDir, "ultron", "agent-guide.md"))
 		if err != nil {
 			return errResult("Error reading agent guide: " + err.Error()), nil, nil
 		}
@@ -197,7 +197,7 @@ return item and textutils.serializeJSON(item) or "null"`, args.Slot)
 	}
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_doc",
-		Description: "Get the contents of a documentation file. Files are served from mcp/docs/<name>/<root>/<file>.",
+		Description: "Get the contents of a documentation file. Files are served from dataDir/docs/<name>/<root>/<file>.",
 	}, func(_ context.Context, _ *mcp.CallToolRequest, args GetDocArgs) (*mcp.CallToolResult, any, error) {
 		manifest, err := ReadManifest()
 		if err != nil {
@@ -213,7 +213,7 @@ return item and textutils.serializeJSON(item) or "null"`, args.Slot)
 		if root == "" {
 			return errResult("Unknown doc set: " + args.Name), nil, nil
 		}
-		content, err := os.ReadFile(filepath.Join("mcp", "docs", args.Name, root, args.File))
+		content, err := os.ReadFile(filepath.Join(DocsDir, args.Name, root, args.File))
 		if err != nil {
 			return errResult("File not found: " + err.Error()), nil, nil
 		}

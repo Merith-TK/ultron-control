@@ -2,17 +2,45 @@ package api
 
 import (
 	"encoding/json"
+	"io/fs"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
+
+	"embed"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
 
-func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
+// extractEmbedded walks srcDir inside src and copies files to destDir,
+// skipping any file that already exists on disk (preserves customisation).
+func extractEmbedded(src fs.FS, srcDir, destDir string) error {
+	return fs.WalkDir(src, srcDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, _ := filepath.Rel(srcDir, path)
+		dest := filepath.Join(destDir, rel)
+		if d.IsDir() {
+			return os.MkdirAll(dest, 0755)
+		}
+		if _, err := os.Stat(dest); err == nil {
+			return nil // already exists, skip
+		}
+		data, err := fs.ReadFile(src, path)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(dest, data, 0644)
+	})
+}
+
+func CreateApiServer(domain string, port int, dataDir string, staticFS embed.FS, docsFS embed.FS) {
 	// // create webserver on port 3300
 	r := mux.NewRouter()
 
@@ -22,10 +50,14 @@ func CreateApiServer(domain string, port int, luaFiles string, dataDir string) {
 		w.Write([]byte("Welcome to the Ultron API!"))
 	})
 
-	InitModules(r)
+	InitModules(r, dataDir, docsFS)
 
-	// Serve Turtle Files
-	r.PathPrefix("/api/static/").Handler(http.StripPrefix("/api/static/", http.FileServer(http.Dir(luaFiles))))
+	// Extract embedded Lua files to dataDir/lua/ (skip existing) then serve from disk.
+	luaDir := filepath.Join(dataDir, "lua")
+	if err := extractEmbedded(staticFS, "static", luaDir); err != nil {
+		log.Println("[Lua] Failed to extract embedded files:", err)
+	}
+	r.PathPrefix("/api/static/").Handler(http.StripPrefix("/api/static/", http.FileServer(http.Dir(luaDir))))
 
 	//handle global api on /api/v1
 	r.HandleFunc("/api", handleGlobalApi)

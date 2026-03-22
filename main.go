@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	config.ReadConfig()
-	configData := config.GetConfig()
-	api.CreateApiServer(configData.Host, configData.Port, configData.LuaFiles, configData.UltronData)
+	config.ReadConfig(DefaultConfig)
+	cfg := config.GetConfig()
+	api.CreateApiServer(cfg.Host, cfg.Port, cfg.UltronData, StaticFiles, DocsFiles)
 }

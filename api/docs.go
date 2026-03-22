@@ -18,14 +18,17 @@ type DocEntry struct {
 	Local bool   `json:"local,omitempty"`
 }
 
-// DocManifest is the top-level structure of mcp/docs/manifest.json
+// DocManifest is the top-level structure of manifest.json
 type DocManifest struct {
 	Docs []DocEntry `json:"docs"`
 }
 
-// ReadManifest reads and parses mcp/docs/manifest.json.
+// DocsDir is set by InitModules to the extracted docs directory (dataDir/docs).
+var DocsDir string
+
+// ReadManifest reads and parses manifest.json from DocsDir.
 func ReadManifest() (*DocManifest, error) {
-	data, err := os.ReadFile(filepath.Join("mcp", "docs", "manifest.json"))
+	data, err := os.ReadFile(filepath.Join(DocsDir, "manifest.json"))
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +55,7 @@ func EnsureDocRepos() {
 			continue
 		}
 
-		dest := filepath.Join("mcp", "docs", entry.Name)
+		dest := filepath.Join(DocsDir, entry.Name)
 
 		_, err := git.PlainOpen(dest)
 		if err == nil {
@@ -82,7 +85,7 @@ func EnsureDocRepos() {
 // HTTP handlers (used by the REST API endpoints in init.go)
 
 func GetManifest(w http.ResponseWriter, r *http.Request) {
-	data, err := os.ReadFile(filepath.Join("mcp", "docs", "manifest.json"))
+	data, err := os.ReadFile(filepath.Join(DocsDir, "manifest.json"))
 	if err != nil {
 		http.Error(w, "Manifest not found", http.StatusNotFound)
 		return
@@ -127,7 +130,7 @@ func GetDocs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filePath := filepath.Join("mcp", "docs", name, root, file)
+	filePath := filepath.Join(DocsDir, name, root, file)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		http.Error(w, "File not found", http.StatusNotFound)
