@@ -61,6 +61,9 @@ type Turtle struct {
 		Up    interface{} `json:"up"`
 		Down  interface{} `json:"down"`
 		Front interface{} `json:"front"`
+		Left  interface{} `json:"left,omitempty"`
+		Right interface{} `json:"right,omitempty"`
+		Back  interface{} `json:"back,omitempty"`
 	} `json:"sight"`
 	CmdResult interface{} `json:"cmdResult"`
 	CmdQueue  []string    `json:"cmdQueue"`
@@ -470,4 +473,7 @@ func handleLegacyTurtleData(message []byte, turtleID *int, c *websocket.Conn) {
 	// import currentTurtle.Sight into Turtles[pos].Sight
 	Turtles[pos].Sight = currentTurtle.Sight
 	// Comment: Dont even know why I did this, or if it is even needed. but the code works as is so I am not touching it
+
+	// Record sight observations into the world map (non-blocking)
+	go RecordTurtleSight(Turtles[pos])
 }

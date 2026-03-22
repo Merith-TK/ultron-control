@@ -9,6 +9,11 @@ import (
 // Just a place to easily load the Modules
 
 func InitModules(m *mux.Router) {
+	// World map SQLite database
+	if err := InitWorldMap("worldmap.db"); err != nil {
+		log.Println("[WorldMap] Failed to initialize:", err)
+	}
+
 	// Setup Turtle API
 	//create api for /api/turtle with argument for id
 	m.HandleFunc("/api/turtle", TurtleHandle)

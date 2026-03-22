@@ -133,6 +133,95 @@ function agentmcp.findResource(itemName)
 end
 
 ------------------------------------------------------------------------
+-- Handler registry
+-- Handlers are called when a block is inspected, to collect extra data
+-- beyond what inspect() provides (e.g. peripheral inventory, fluid level).
+--
+-- Usage:
+--   agentmcp.registerHandler("myhandler", "chest|barrel", function(wrapDir, name, state)
+--       local p = peripheral.wrap(wrapDir)
+--       if p and p.list then return p.list() end
+--   end)
+--
+-- wrapDir is the peripheral.wrap() direction string:
+--   "top", "bottom", "front" (also used after turning for left/back/right)
+------------------------------------------------------------------------
+
+local _handlers = {}
+
+-- Register a new handler. namePattern is matched against block names with
+-- string.find (plain substring match). fn returns a table or nil.
+function agentmcp.registerHandler(name, namePattern, fn)
+    _handlers[#_handlers + 1] = { name = name, pattern = namePattern, fn = fn }
+end
+
+-- Run all registered handlers against a block. Returns merged extra table,
+-- or nil if no handler produced data.
+function agentmcp.runHandlers(wrapDir, blockName, blockState)
+    if not blockName then return nil end
+    local extra = {}
+    local hasData = false
+    for _, h in ipairs(_handlers) do
+        if blockName:find(h.pattern, 1, true) then
+            local ok, result = pcall(h.fn, wrapDir, blockName, blockState)
+            if ok and result ~= nil then
+                extra[h.name] = result
+                hasData = true
+            end
+        end
+    end
+    return hasData and extra or nil
+end
+
+-- Built-in: inventory handler for storage blocks.
+-- Reads item list via peripheral API when adjacent to a chest, barrel, etc.
+agentmcp.registerHandler("inventory",
+    "chest|barrel|hopper|shulker|dropper|dispenser|furnace",
+    function(wrapDir, blockName, blockState)
+        local p = peripheral.wrap(wrapDir)
+        if not p or not p.list then return nil end
+        local raw = p.list()
+        local result = {}
+        for slot, item in pairs(raw) do
+            result[#result + 1] = { slot = slot, name = item.name, count = item.count }
+        end
+        return #result > 0 and result or nil
+    end
+)
+
+-- Full inspection: inspect all available sides, run handlers on each block found.
+-- Returns a table of side → {name, state, extra}.
+-- Call agentmcp.fullInspect() via run_command to get rich block data with
+-- handler results included (e.g. chest inventories).
+function agentmcp.fullInspect()
+    local function side(inspectFn, wrapDir)
+        local ok, data = inspectFn()
+        if not ok then return {} end
+        local result = { name = data.name, state = data.state }
+        local extra = agentmcp.runHandlers(wrapDir, data.name, data.state)
+        if extra then result.extra = extra end
+        return result
+    end
+
+    local sides = {}
+    sides.up    = side(turtle.inspectUp,   "top")
+    sides.down  = side(turtle.inspectDown, "bottom")
+    sides.front = side(turtle.inspect,     "front")
+
+    if fs.exists("cfg/inspectAll") then
+        turtle.turnLeft()
+        sides.left  = side(turtle.inspect, "front") -- peripheral dir is always "front" after turning
+        turtle.turnLeft()
+        sides.back  = side(turtle.inspect, "front")
+        turtle.turnLeft()
+        sides.right = side(turtle.inspect, "front")
+        turtle.turnLeft() -- restore
+    end
+
+    return textutils.serializeJSON(sides)
+end
+
+------------------------------------------------------------------------
 -- Scanning
 ------------------------------------------------------------------------
 
@@ -225,6 +314,8 @@ end
 --   "blocked:axis:err"   — movement failed (bedrock, world border, fuel)
 --
 -- Keep maxSteps at 16 or fewer to avoid the 30s run_command timeout.
+-- WARNING: moveTo digs through any block in the path, including placed
+-- blocks like furnaces. Use moveToSafe when near placed blocks.
 function moveTo(tx, ty, tz, maxSteps)
     maxSteps = maxSteps or 16
     local steps = 0
@@ -271,6 +362,50 @@ function goTo(name, maxSteps)
     local wp = ultron.data.misc.agentmcp.waypoints[name]
     if not wp then return "waypoint '" .. tostring(name) .. "' not found" end
     return moveTo(wp.x, wp.y, wp.z, maxSteps)
+end
+
+-- moveToSafe: like moveTo but NEVER digs. Returns "blocked:*" if any block
+-- is in the way. Use near placed blocks (furnaces, chests, etc.).
+function moveToSafe(tx, ty, tz, maxSteps)
+    maxSteps = maxSteps or 16
+    local steps = 0
+    while steps < maxSteps do
+        local x, y, z = skyrtle.getPosition()
+        if x == tx and y == ty and z == tz then return "done" end
+        local ok, err
+        if y < ty then
+            if turtle.detectUp() then return "blocked:up:block" end
+            ok, err = turtle.up()
+            if not ok then return "blocked:up:" .. tostring(err) end
+        elseif y > ty then
+            if turtle.detectDown() then return "blocked:down:block" end
+            ok, err = turtle.down()
+            if not ok then return "blocked:down:" .. tostring(err) end
+        elseif x < tx then
+            faceDir(1)
+            if turtle.detect() then return "blocked:east:block" end
+            ok, err = turtle.forward()
+            if not ok then return "blocked:east:" .. tostring(err) end
+        elseif x > tx then
+            faceDir(3)
+            if turtle.detect() then return "blocked:west:block" end
+            ok, err = turtle.forward()
+            if not ok then return "blocked:west:" .. tostring(err) end
+        elseif z < tz then
+            faceDir(2)
+            if turtle.detect() then return "blocked:south:block" end
+            ok, err = turtle.forward()
+            if not ok then return "blocked:south:" .. tostring(err) end
+        elseif z > tz then
+            faceDir(0)
+            if turtle.detect() then return "blocked:north:block" end
+            ok, err = turtle.forward()
+            if not ok then return "blocked:north:" .. tostring(err) end
+        end
+        steps = steps + 1
+    end
+    local x, y, z = skyrtle.getPosition()
+    return "partial " .. x .. "," .. y .. "," .. z
 end
 
 return agentmcp

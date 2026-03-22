@@ -261,31 +261,39 @@ function ultron.handleSyncCommand(cmdRequest)
 end
 
 function ultron.wget(file, url)
-    local localfile = fs.open(file, "w")
-    if fs.exists(file) then fs.copy(file, file .. ".bak") end
+    -- First, attempt to download the data before touching the local file
     local dl = http.get(url)
     local didError = false
+    local data = nil
+
     if dl then
-        local data = dl.readAll()
-        if data ~= "" then
-            localfile.write(data)
-        else
-            print("[Err] Could not download '" .. file .. "' recieved No Data")
+        data = dl.readAll()
+        dl.close()
+        if data == "" or data == nil then
+            print("[Err] Could not download '" .. file .. "' received No Data")
             didError = true
         end
-        dl.close()
     else
-        print("[Error]: Unable to download " .. file)
+        print("[Error]: Unable to download " .. file .. " - server unreachable")
         didError = true
     end
-    localfile.close()
-    if didError then
-        if fs.exists(file .. ".bak") then
-            fs.delete(file)
-            fs.move(file .. ".bak", file)
-        end
-    else
+
+    -- Only proceed with file operations if download was successful
+    if not didError then
+        -- Create backup before overwriting
+        if fs.exists(file) then fs.copy(file, file .. ".bak") end
+
+        -- Now write the downloaded data
+        local localfile = fs.open(file, "w")
+        localfile.write(data)
+        localfile.close()
+
+        -- Clean up backup on success
         if fs.exists(file .. ".bak") then fs.delete(file .. ".bak") end
+
+        ultron.debugPrint("Successfully updated " .. file)
+    else
+        ultron.debugPrint("Preserving existing " .. file .. " - server unreachable")
     end
 end
 

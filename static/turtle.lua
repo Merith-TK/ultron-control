@@ -38,26 +38,39 @@ ultron.data = {
     heartbeat = 0
 }
 
+local hasInspectAll = fs.exists("cfg/inspectAll")
+
 local function inspectWorld()
     local sight = {}
-    local up, upName = turtle.inspectUp()
-    local down, downName = turtle.inspectDown()
-    local front, frontName = turtle.inspect()
-    if up then
-        sight.up = upName
-    else
-        sight.up = {}
+    local ok, data
+
+    ok, data = turtle.inspectUp()
+    sight.up = ok and data or {}
+
+    ok, data = turtle.inspectDown()
+    sight.down = ok and data or {}
+
+    ok, data = turtle.inspect()
+    sight.front = ok and data or {}
+
+    if hasInspectAll then
+        -- Spin 360° to collect all four horizontal sides, then restore facing.
+        -- skyrtle tracks the turns so position data stays accurate.
+        turtle.turnLeft()
+        ok, data = turtle.inspect()
+        sight.left = ok and data or {}
+
+        turtle.turnLeft()
+        ok, data = turtle.inspect()
+        sight.back = ok and data or {}
+
+        turtle.turnLeft()
+        ok, data = turtle.inspect()
+        sight.right = ok and data or {}
+
+        turtle.turnLeft() -- restored to original facing
     end
-    if down then
-        sight.down = downName
-    else
-        sight.down = {}
-    end
-    if front then
-        sight.front = frontName
-    else
-        sight.front = {}
-    end
+
     return sight
 end
 
